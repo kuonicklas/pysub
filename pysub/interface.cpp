@@ -1,43 +1,11 @@
 #include "interface.hpp"
 #include <iostream>
-//#include <string>
+#include <string>
 //#include <fstream>
 //#include <iomanip>
 
 void Interface::start() {
-	//Welcome Message
-	std::cout << "PySub Interpreter" << std::endl;
-	std::cout << "Type \"help\" for commands or \"quit\" to exit." << std::endl;
-
-	//Read-Eval Loop
-	while (true) {
-		std:: cout << ">>> ";
-
-		try {
-			//Get Line of User Input
-			string input_line;
-			getline(cin, input_line);
-
-			//Lexically Analyze the Command, get tokens
-			auto tokenLine = generate(input_line);
-
-			//Identify and Execute
-			if (isCommand(tokenLine)) {
-				//Execute as Command
-				string command = getCommand(tokenLine);
-				string argument = getArgument(tokenLine);
-				execute(command, argument);
-			}
-			else
-			{
-				//Evaluate as Expression
-				evaluate(tokenLine);
-			}
-		}
-		catch (const std::string& errorMsg) {
-			std::cout << errorMsg << std::endl;
-		}
-	}
+	
 }
 //
 //bool Interface::isCommand(const tokenLineType tokenLine) {
