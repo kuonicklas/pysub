@@ -1,8 +1,11 @@
 #ifndef INPUT_PARSER_HPP
 #define INPUT_PARSER_HPP
 
-class InputParser {
+#include <string>
 
+class InputParser {
+public:
+	static std::string ToLowerCase(std::string_view original);
 };
 
 #endif

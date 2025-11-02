@@ -1,1 +1,2 @@
 use proper exception class
+-use static class functions if possible (avoid instantiation)
