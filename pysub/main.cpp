@@ -10,9 +10,10 @@ int main()
 	std::cout << "PySub Interpreter" << std::endl;
 	std::cout << "Type \"help\" for commands or \"quit\" to exit." << std::endl;
 
+	//LexicalAnalyzer lexical_analyzer;
+	//ExpressionEvaluator expression_evaluator;
+
 	CommandHandler command_handler;
-	LexicalAnalyzer lexical_analyzer;
-	ExpressionEvaluator expression_evaluator;
 
 	// read commands
 	while (true) {
@@ -26,10 +27,10 @@ int main()
 			// perform lexical analysis on input
 			TokenLine input_tokens = lexical_analyzer.generate(input_line);
 
-			auto command = command_handler.GetCommand(input_tokens);
+			auto command = CommandHandler::GetCommand(input_tokens);
 			if (command) {
 				std::string argument = input_parser.GetArgument(input_tokens);
-				command_handler.execute(command.value(), argument);
+				command_handler.Execute(command.value(), argument);
 			}
 			else {
 				// evaluate as an expression

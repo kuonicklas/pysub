@@ -2,23 +2,29 @@
 #define COMMAND_HANDLER
 
 #include "globals.hpp"
-#include <set>
+
 #include <optional>
 
+
+enum class Command {
+	Quit,
+	Help,
+	Read,
+	Show,
+	Clear
+};
+
 class CommandHandler {
-	public:
-		enum class Command {
-			Quit,
-			Help,
-			Read,
-			Show,
-			Clear
-		};
-		bool IsCommand(const TokenLine& token_line) const;
-		bool IsCommand(const std::string& command) const;
-		std::optional<Command> GetCommand(const TokenLine& token_line) const;
-		std::optional<Command> GetCommand(std::string_view command) const;
-		void Execute(const Command command) const;
+public:
+	static bool IsCommand(const TokenLine& token_line);
+	static bool IsCommand(const std::string& command);
+	static std::optional<Command> GetCommand(const TokenLine& token_line);
+	static std::optional<Command> GetCommand(std::string_view command);
+	void Execute(const Command command, std::string_view argument);
+	void Help(std::string_view argument) const;
+private:
+	std::vector<std::string> file_lines{};
+	std::vector<TokenLine> file_tokens{};
 };
 
 #endif

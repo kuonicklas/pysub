@@ -1,2 +1,4 @@
 use proper exception class
 -use static class functions if possible (avoid instantiation)
+
+-remove whitespaces after doing getline
