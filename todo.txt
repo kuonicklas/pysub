@@ -2,3 +2,7 @@ use proper exception class
 -use static class functions if possible (avoid instantiation)
 
 -remove whitespaces after doing getline
+
+future features:
+-support for floats (not just integers)
+-throw an exception class that has the problematic line, the position, and the index (see how the python ui throws errors)

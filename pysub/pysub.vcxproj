@@ -134,6 +134,7 @@
     <ClCompile Include="command_handler.cpp" />
     <ClCompile Include="input_parser.cpp" />
     <ClCompile Include="interface.cpp" />
+    <ClCompile Include="lexical_analyzer.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -141,6 +142,7 @@
     <ClInclude Include="globals.hpp" />
     <ClInclude Include="input_parser.hpp" />
     <ClInclude Include="interface.hpp" />
+    <ClInclude Include="lexical_analyzer.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

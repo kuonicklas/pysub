@@ -27,6 +27,9 @@
     <ClCompile Include="input_parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="lexical_analyzer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="interface.hpp">
@@ -39,6 +42,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="globals.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lexical_analyzer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

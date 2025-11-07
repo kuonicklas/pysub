@@ -5,6 +5,7 @@
 
 std::string InputParser::ToLowerCase(std::string_view original) {
 	std::string lowercase{};
+	lowercase.reserve(original.size());
 	std::transform(std::begin(original), std::end(original), std::back_inserter(lowercase),
 		[](char c) {return static_cast<char>(std::tolower(static_cast<unsigned char>(c))); });
 	return lowercase;
@@ -22,4 +23,8 @@ void InputParser::TrimLeadingAndTrailingWhitespaces(std::string& string) {
 	}
 	size_t end = string.find_last_not_of(" \t");
 	string = string.substr(start, end - start + 1);
+}
+
+bool InputParser::IsWhitespace(char c) {
+	return c == ' ' || c == '\t';
 }

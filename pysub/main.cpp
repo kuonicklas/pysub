@@ -1,6 +1,6 @@
 #include "command_handler.hpp"
 #include "input_parser.hpp"
-#include "globals.hpp"
+#include "lexical_analyzer.hpp"
 
 #include <iostream>
 #include <string>
@@ -25,7 +25,7 @@ int main()
 			std::getline(std::cin, input_line);
 
 			// perform lexical analysis on input
-			TokenLine input_tokens = lexical_analyzer.generate(input_line);
+			TokenLine input_tokens = LexicalAnalyzer::GenerateTokens(input_line);
 
 			auto command = CommandHandler::GetCommand(input_tokens);
 			if (command) {

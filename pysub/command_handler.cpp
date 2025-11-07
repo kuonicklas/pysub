@@ -8,7 +8,7 @@
 // returns true if any token contains a command
 bool CommandHandler::IsCommand(const TokenLine& token_line) {
 	return std::any_of(std::begin(token_line), std::end(token_line), [](const auto& token) -> bool {
-		return token.category == Category::Identifier && IsCommand(token.string);
+		return token.category == Category::Identifier && IsCommand(std::get<std::string>(token.value));
 		});
 }
 
@@ -21,7 +21,7 @@ std::optional<Command> CommandHandler::GetCommand(const TokenLine& token_line) {
 	if (token_line.empty()) {
 		return {};
 	}
-	return GetCommand(token_line.front().string);	// may or may not be valid
+	return GetCommand(std::get<std::string>(token_line.front().value));	// may or may not be valid
 }
 
 std::optional<Command> CommandHandler::GetCommand(std::string_view command) {
@@ -55,7 +55,6 @@ void CommandHandler::Execute(const Command command, std::string_view argument) {
 	default:
 		throw std::exception("unknown command");
 	}
-	
 }
 
 void CommandHandler::Help(std::string_view initial_argument) const {
@@ -108,5 +107,5 @@ void CommandHandler::Help(std::string_view initial_argument) const {
 			// if argument was provided but unrecognizeable, print error and request again.
 			std::cout << "Command not recognized." << std::endl;
 		}
-	} while (true);
+	} while (!initial_argument_provided);
 }

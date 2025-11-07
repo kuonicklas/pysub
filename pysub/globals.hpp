@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <variant>
 
 enum class Category
 {
@@ -23,7 +24,7 @@ enum class Category
 };
 
 struct Token {
-    std::string string;
+    std::variant<std::string, int> value;
     Category category;
 };
 
