@@ -26,6 +26,10 @@ enum class Category
 struct Token {
     std::variant<std::string, int> value;
     Category category;
+
+    bool operator==(const Token& rhs) const {
+        return this->category == rhs.category && this->value == rhs.value;
+    }
 };
 
 using TokenLine = std::vector<Token>;

@@ -28,3 +28,32 @@ void InputParser::TrimLeadingAndTrailingWhitespaces(std::string& string) {
 bool InputParser::IsWhitespace(char c) {
 	return c == ' ' || c == '\t';
 }
+
+bool InputParser::IsSymbol(char c) {
+	return c == '\'' || c == '\"' || c == '(' || c == ')' || c == ':' || c == ', ' || c == '#';
+}
+
+bool InputParser::IsOperator(char c) {
+	return c == '=' || c == '<' || c == '>' || c == '!' || c == '+' || c == '-' || c == '*' || c == '/' || c == '%';
+}
+
+bool InputParser::IsNewTokenChar(char c) {
+	// returns true if the char is the beginning of a new token/end of the current one (assuming it is not part of a string literal or comment)
+	return IsWhitespace(c) || IsSymbol(c) || IsOperator(c);
+}
+
+bool InputParser::IsNonLogicalOperatorKeyword(std::string_view string) {
+	return string == "print" || string == "if" || string == "elif" || string == "else" || string == "while" || string == "int" || string == "input";
+}
+
+bool InputParser::IsLogicalOperatorKeyword(std::string_view string) {
+	return string == "and" || string == "or" || string == "not";
+}
+
+bool InputParser::IsRelationalOrAssignmentOperator(char c) {
+	return c == '=' || c == '<' || c == '>' || c == '!';
+}
+
+bool InputParser::IsArithmeticOperator(char c) {
+	return c == '+' || c == '-' || c == '*' || c == '/' || c == '%';
+}

@@ -3,6 +3,11 @@ use proper exception class
 
 -remove whitespaces after doing getline
 
+
+-make sure '-' can be used as a unary operator ('-1')
+-make sure any number of minuses can be stacked (---1 == -1, 5--1 == 6)
+-make sure any number of pluses can be stacked as well.
+
 future features:
 -support for floats (not just integers)
 -throw an exception class that has the problematic line, the position, and the index (see how the python ui throws errors)

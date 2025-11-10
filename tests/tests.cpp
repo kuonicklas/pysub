@@ -1,37 +1,133 @@
 #include "pch.h"
 #include "CppUnitTest.h"
 
-#include "../pysub/interface.cpp"
+#include <windows.h>
+#include <limits>
+
+#include "../pysub/lexical_analyzer.cpp"
+#include "../pysub/input_parser.cpp"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
+// microsoft defines these as macros, leading to name clashes
+#pragma push_macro("max")
+#pragma push_macro("min")
+#undef max
+#undef min
+
+namespace Microsoft::VisualStudio::CppUnitTestFramework {
+	
+	// equality asserts require a template specialization for ToString<> for error message purposes.
+	// the process of conversion: using creating a wstringstream and using << operator.
+	// to add a new type: (1) overload wstringstream << operator, (2) add template specialization.
+
+	std::string ErrorToString(DWORD error) {
+		// stolen from stackoverflow: https://stackoverflow.com/questions/1387064/how-to-get-the-error-message-from-the-error-code-returned-by-getlasterror
+		if (!error) {
+			return {};
+		}
+		LPSTR message_buffer{};
+		size_t message_size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			nullptr, error, 0, (LPSTR)&message_buffer, 0, nullptr);
+		if (!message_size) {
+			throw GetLastError();	// can't be a message, sadly (or it could loop forever)
+		}
+		std::string message(message_buffer, message_size);
+		LocalFree(message_buffer);
+		return message;
+	}
+
+	std::wstring ToWString(const std::string& utf8_string) {
+		// wstringstream does not have default behavior for std::string (but it does for other primitive types).
+		// there is no non-deprecated conversion function in the std library (as of C++20), so windows api is used.
+		// input is const string& (rather than string_view) because a null-terminated string (which string::c_str provides) is required if length is determined by function.
+		int buffer_size = MultiByteToWideChar(CP_UTF8, 0, utf8_string.c_str(), -1, nullptr, 0);
+		if (!buffer_size) {
+			throw std::exception(ErrorToString(GetLastError()).c_str());
+		}
+		std::wstring converted(buffer_size, 0);
+		MultiByteToWideChar(CP_UTF8, 0, utf8_string.c_str(), -1, converted.data(), buffer_size);
+		return converted;
+	}
+
+	std::wstringstream& operator<<(std::wstringstream& stream, const Token& token) {
+		// convert to wstring
+		if (token.value.index() == 0) {
+			stream << ToWString(std::get<std::string>(token.value));
+		}
+		else {
+			stream << std::get<int>(token.value);
+		}
+		return stream;
+	}
+
+	std::wstringstream& operator<<(std::wstringstream& stream, const TokenLine& token_line) {
+		for (const auto& token : token_line) {
+			stream << token;
+			stream << ',';
+		}
+		return stream;
+	}
+
+	template <typename T>
+	std::wstring ConstructWideString(const T& narrow_type) {
+		// helper for ToString template specializations
+		std::wstringstream stream{};
+		stream << narrow_type;
+		return stream.str();
+	}
+
+	// ToString template specializations
+	template<> inline std::wstring Microsoft::VisualStudio::CppUnitTestFramework::ToString<Token>(const Token& token) {
+		return ConstructWideString(token);
+	}
+
+	template<> inline std::wstring Microsoft::VisualStudio::CppUnitTestFramework::ToString<std::vector<Token>>(const std::vector<Token>& token) {
+		return ConstructWideString(token);
+	}
+}
+
 namespace tests
 {
-	TEST_CLASS(tests)
+	TEST_CLASS(LexicalAnalyserTest)
 	{
 	public:
-		
-		TEST_METHOD(TestMethod1)
-		{
-			Interface i;
-			Assert::AreEqual(2, i.add(1, 1));
+		TEST_METHOD(NumericLiteralCorrect) {
+			TokenLine actual = LexicalAnalyzer::GenerateTokens("012345");
+			TokenLine expected{ {12345, Category::NumericLiteral} };
+			Assert::AreEqual(expected, actual);
 		}
-
-		TEST_METHOD(Method1)
-		{
-			Logger::WriteMessage("In Method1");
-			Assert::AreEqual(0, 0);
+		TEST_METHOD(NumericLiteralInvalid) {
+			auto func = []() {LexicalAnalyzer::GenerateTokens("1prince"); };
+			Assert::ExpectException<std::invalid_argument>(func);
 		}
+		TEST_METHOD(NumericLiteralOutOfRange) {
+			// max
+			TokenLine actual = LexicalAnalyzer::GenerateTokens(std::to_string(std::numeric_limits<int>::max()));
+			TokenLine expected{ {std::numeric_limits<int>::max(), Category::NumericLiteral} };
+			Assert::AreEqual(expected, actual);
 
-		TEST_METHOD(Method2)
-		{
-			Assert::Fail(L"Fail");
+			// min
+			actual = LexicalAnalyzer::GenerateTokens(std::to_string(std::numeric_limits<int>::min()));
+			expected = { {std::numeric_limits<int>::min(), Category::NumericLiteral} };
+			Assert::AreEqual(expected, actual);
+
+			// above
+			auto above = []() {LexicalAnalyzer::GenerateTokens(std::to_string(static_cast<long>(std::numeric_limits<int>::max()) + 1) ); };
+			Assert::ExpectException<std::out_of_range>(above);
+
+			// below
+			auto below = []() {LexicalAnalyzer::GenerateTokens(std::to_string(static_cast<long>(std::numeric_limits<int>::min()) - 1)); };
+			Assert::ExpectException<std::out_of_range>(below);
 		}
-
-		//TEST_METHOD(TestMethod2)
-		//{
-		//	Interface i;
-		//	Assert::AreEqual(3, i.add(1, 2));
-		//}
+		TEST_METHOD(Identifier)
+		{
+			TokenLine actual = LexicalAnalyzer::GenerateTokens("prince");
+			TokenLine expected{ {"prince", Category::Identifier}};
+			Assert::AreEqual(expected, actual);
+		}
 	};
 }
+
+#pragma pop_macro("max")
+#pragma pop_macro("min")
