@@ -53,7 +53,7 @@ std::vector<TokenLine> LexicalAnalyzer::GenerateTokens(const std::vector<std::st
 				// '_' is valid for Python. numbers are valid if they are not first char.
 				while (curr_char != std::end(input_line) && !InputParser::IsNewTokenChar(*curr_char)) {
 					if (!std::isalnum(*curr_char) && *curr_char != '_') {
-						throw std::exception("invalid identifier");
+						throw std::invalid_argument("invalid identifier");
 					}
 					std::get<std::string>(new_token.value) += *curr_char;
 					++curr_char;
@@ -78,7 +78,7 @@ std::vector<TokenLine> LexicalAnalyzer::GenerateTokens(const std::vector<std::st
 					++curr_char;
 				}
 				if (curr_char == std::end(input_line)) {
-					throw std::exception("unterminated string literal");
+					throw std::invalid_argument("unterminated string literal");
 				}
 				++curr_char;	// skip close quote
 			}
@@ -114,10 +114,11 @@ std::vector<TokenLine> LexicalAnalyzer::GenerateTokens(const std::vector<std::st
 					++curr_char;
 				}
 				if (std::get<std::string>(new_token.value) == "=") {
+					new_token.value = "";	// erase string data (it's redundant given the enum)
 					new_token.category = Category::AssignmentOperator;
 				}
 				else if (std::get<std::string>(new_token.value) == "!") {
-					throw std::exception("invalid \'!\' operator");
+					throw std::invalid_argument("invalid \'!\' operator");
 				}
 				else {
 					new_token.category = Category::RelationalOperator;
@@ -137,7 +138,7 @@ std::vector<TokenLine> LexicalAnalyzer::GenerateTokens(const std::vector<std::st
 				++curr_char;
 			}
 			else {
-				throw std::exception("invalid character");
+				throw std::invalid_argument("invalid character");
 			}
 
 			// insert token

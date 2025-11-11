@@ -1,8 +1,5 @@
-use proper exception class
--use static class functions if possible (avoid instantiation)
-
--remove whitespaces after doing getline
-
+-remember to remove whitespaces for the output of getline
+-TODO: have token.value always contain something. don't omit it just because enum renders it redundant.
 
 -make sure '-' can be used as a unary operator ('-1')
 -make sure any number of minuses can be stacked (---1 == -1, 5--1 == 6)
@@ -11,3 +8,6 @@ use proper exception class
 future features:
 -support for floats (not just integers)
 -throw an exception class that has the problematic line, the position, and the index (see how the python ui throws errors)
+
+notes:
+-max int representation is not [int min, int max], but (int min, int max]. This is because the negative sign and the digits are treated separately in intermediate stages, and the absolute value must be storable into a normal int.

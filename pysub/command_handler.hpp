@@ -11,13 +11,14 @@ enum class Command {
 	Help,
 	Read,
 	Show,
-	Clear
+	Clear,
+	Run
 };
 
 class CommandHandler {
 public:
-	static bool IsCommand(const TokenLine& token_line);
-	static bool IsCommand(const std::string& command);
+	/*static bool IsCommand(const TokenLine& token_line);
+	static bool IsCommand(const std::string& command);*/
 	static std::optional<Command> GetCommand(const TokenLine& token_line);
 	static std::optional<Command> GetCommand(std::string_view command);
 	void Execute(const Command command, std::string_view argument);

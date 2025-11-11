@@ -27,16 +27,16 @@ int main()
 			// perform lexical analysis on input
 			TokenLine input_tokens = LexicalAnalyzer::GenerateTokens(input_line);
 
-			//auto command = CommandHandler::GetCommand(input_tokens);
-			//if (command) {
-			//	std::string argument = input_parser.GetArgument(input_tokens);
+			auto command = CommandHandler::GetCommand(input_tokens);
+			if (command) {
+				auto argument = InputParser::GetCommandArgument(input_tokens);
 			//	command_handler.Execute(command.value(), argument);
-			//}
-			//else {
+			}
+			else {
 			//	// evaluate as an expression
 			//	int expression_value = expression_evaluator.evaluate(input_tokens);
 			//	std::cout << expression_value << std::endl;
-			//}
+			}
 		}
 		catch (const std::exception& ex) {
 			std::cout << ex.what() << std::endl;
