@@ -13,7 +13,7 @@ std::string InputParser::ToLowerCase(std::string_view original) {
 }
 
 void InputParser::ToLowerCase(std::string& original) {
-	std::transform(std::begin(original), std::end(original), std::back_inserter(original),
+	std::transform(std::begin(original), std::end(original), std::begin(original),
 		[](char c) {return static_cast<char>(std::tolower(static_cast<unsigned char>(c))); });
 }
 
@@ -61,10 +61,14 @@ bool InputParser::IsArithmeticOperator(char c) {
 
 std::optional<std::string> InputParser::GetCommandArgument(const TokenLine& token_line) {
 	auto iter = std::begin(token_line);
+
+	// command
 	if (iter == std::end(token_line)) {
 		throw std::invalid_argument("no command provided");
 	}
 	++iter;
+
+	// left parenthesis (or nothing)
 	if (iter == std::end(token_line)) {
 		return{};
 	}
@@ -72,37 +76,31 @@ std::optional<std::string> InputParser::GetCommandArgument(const TokenLine& toke
 		throw std::invalid_argument("expected left parenthesis after command");
 	}
 	++iter;
+
+	// (argument), right parenthesis
 	if (iter == std::end(token_line)) {
 		throw std::invalid_argument("unmatched left parenthesis");
 	}
+	// in python terminal, you can use expressions as arguments (its type becomes the argument). for our purposes, only identifiers and strings are allowed
 	std::string argument{};
-	// in python terminal, you can use numbers as arguments. for our purposes, only identifiers and strings are allowed
-
-	// collect everything until close parenthesis. make it so .value always has something.
-
-	if (iter->category != Category::RightParenthesis && iter->category != Category::Identifier && iter) {
-		throw std::invalid_argument("expected identifier in command argument");
+	if (iter->category != Category::RightParenthesis && iter->category != Category::Identifier && iter->category != Category::StringLiteral) {
+		throw std::invalid_argument("expected identifier or string literal in command argument");
 	}
-	if (iter->category == Category::Identifier){
+	if (iter->category != Category::RightParenthesis){
 		argument = std::get<std::string>(iter->value);
 		++iter;
 	}
 	if (iter->category != Category::RightParenthesis) {
 		throw std::invalid_argument("expected right parenthesis after command argument");
 	}
-
-	
 	++iter;
-	if (iter == std::end(token_line)) {
-		throw std::invalid_argument("unmatched left parenthesis");
-	}
-	if (iter->category != Category::LeftParenthesis) {
-		throw std::invalid_argument("expected right parenthesis after command argument");
-	}
 
-	//first is command
-	//second is left paren (or nothing)
-	//third is the argument (as an identifier)
-	//fourth is close paren
-	// fifth is nothing
+	// (comment), end
+	if (iter != std::end(token_line) && iter->category == Category::Comment) {
+		++iter;
+	}	
+	if (iter != std::end(token_line)) {
+		throw std::invalid_argument("invalid syntax after command");
+	}
+	return argument;
 }

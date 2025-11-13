@@ -26,11 +26,10 @@ int main()
 
 			// perform lexical analysis on input
 			TokenLine input_tokens = LexicalAnalyzer::GenerateTokens(input_line);
-
 			auto command = CommandHandler::GetCommand(input_tokens);
 			if (command) {
 				auto argument = InputParser::GetCommandArgument(input_tokens);
-			//	command_handler.Execute(command.value(), argument);
+				command_handler.Execute(command.value(), argument.value_or(""));
 			}
 			else {
 			//	// evaluate as an expression

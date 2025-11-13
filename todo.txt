@@ -1,5 +1,7 @@
+TODO:
+-align the columns of show(tokens) output
+
 -remember to remove whitespaces for the output of getline
--TODO: have token.value always contain something. don't omit it just because enum renders it redundant.
 
 -make sure '-' can be used as a unary operator ('-1')
 -make sure any number of minuses can be stacked (---1 == -1, 5--1 == 6)
