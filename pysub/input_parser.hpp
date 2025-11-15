@@ -25,6 +25,9 @@ public:
 
 	// parsing
 	static std::optional<std::string> GetCommandArgument(const TokenLine& token_line);
+
+	// exceptions
+	static std::exception AddContext(const std::string& context, const std::exception& ex);
 };
 
 #endif

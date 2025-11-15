@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 
+#include "magic_enum.hpp"
+
 int main()
 {
 	std::cout << "PySub Interpreter" << std::endl;

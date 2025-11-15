@@ -104,3 +104,8 @@ std::optional<std::string> InputParser::GetCommandArgument(const TokenLine& toke
 	}
 	return argument;
 }
+
+std::exception InputParser::AddContext(const std::string& context, const std::exception& ex) {
+	// const std::string& instead of std::string_view because of inevitable copy
+	return std::exception{ std::string{context + ": " + ex.what()}.c_str()};
+}

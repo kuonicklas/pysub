@@ -27,82 +27,15 @@ std::optional<Command> CommandHandler::GetCommand(const TokenLine& token_line) n
 }
 
 std::optional<Command> CommandHandler::StringToCommand(std::string_view command) {
-	std::string lowercase = InputParser::ToLowerCase(command);
-	if (lowercase == "quit") return Command::Quit;
-	if (lowercase == "help") return Command::Help;
-	if (lowercase == "read") return Command::Read;
-	if (lowercase == "show") return Command::Show;
-	if (lowercase == "clear") return Command::Clear;
-	if (lowercase == "run") return Command::Run;
-	return {};
+	return magic_enum::enum_cast<Command>(command, magic_enum::case_insensitive);
 }
 
 std::string CommandHandler::CategoryToString(Category category) {
-	switch (category) {
-	case Category::Keyword:
-		return "keyword";
-	case Category::Identifier:
-		return "identifier";
-	case Category::StringLiteral:
-		return "string_literal";
-	case Category::NumericLiteral:
-		return "numeric_literal";
-	case Category::AssignmentOperator:
-		return "assignment_operator";
-	case Category::ArithmeticOperator:
-		return "arithmetic_operator";
-	case Category::LogicalOperator:
-		return "logical_operator";
-	case Category::RelationalOperator:
-		return "relational_operator";
-	case Category::LeftParenthesis:
-		return "left_parenthesis";
-	case Category::RightParenthesis:
-		return "right_parenthesis";
-	case Category::Colon:
-		return "colon";
-	case Category::Comma:
-		return "comma";
-	case Category::Comment:
-		return "comment";
-	case Category::Indent:
-		return "indent";
-	default:
+	auto category_string = magic_enum::enum_name(category);
+	if (category_string.empty()) {
 		throw std::invalid_argument("unknown category");
 	}
-}
-
-std::vector<std::string> CommandHandler::GetCommandList() {
-	// hacky way to iterate through an enum and convert to strings
-	// assumes that the enum values are auto-assigned!
-	static std::vector<std::string> command_list{};
-	static bool is_initialized = false;
-	int command_num = 0;	
-	while (!is_initialized) {
-		switch (static_cast<Command>(command_num)) {
-		case Command::Quit:
-			command_list.push_back("quit");
-			break;
-		case Command::Help:
-			command_list.push_back("help");
-			break;
-		case Command::Read:
-			command_list.push_back("read");
-			break;
-		case Command::Show:
-			command_list.push_back("show");
-			break;
-		case Command::Clear:
-			command_list.push_back("clear");
-			break;
-		case Command::Run:
-			command_list.push_back("run");
-			is_initialized = true;	// keep this at the last enum
-		// we don't set is_initialized in the default case because casting outside of enum bounds is UB.
-		}
-		++command_num;
-	}
-	return command_list;
+	return std::string{ category_string };
 }
 
 void CommandHandler::Execute(const Command command, std::string_view argument) {
@@ -111,7 +44,7 @@ void CommandHandler::Execute(const Command command, std::string_view argument) {
 	switch (command) {
 	case Command::Quit:
 		if (argument_provided) {
-			throw std::invalid_argument("quit called with unknown argument");
+			throw std::invalid_argument("quit() called with unknown argument");
 		}
 		std::exit(0);
 		break;
@@ -124,7 +57,7 @@ void CommandHandler::Execute(const Command command, std::string_view argument) {
 			file_tokens = LexicalAnalyzer::GenerateTokens(file_lines);
 		}
 		catch (const std::exception& ex) {
-			throw std::exception(std::string{std::string{"read error: "} + ex.what()}.c_str());
+			throw InputParser::AddContext("read error: ", ex);
 		}
 		break;
 	}
@@ -133,11 +66,15 @@ void CommandHandler::Execute(const Command command, std::string_view argument) {
 		break;
 	case Command::Clear:
 		if (argument_provided) {
-			throw std::invalid_argument("clear called with unknown argument");
+			throw std::invalid_argument("clear() called with unknown argument");
 		}
 		ClearData();
 		break;
 	case Command::Run:
+		if (argument_provided) {
+			throw std::invalid_argument("run() called with unknown argument");
+		}
+		Run();
 		break;
 	default:
 		throw std::invalid_argument("invalid command enum");
@@ -169,7 +106,8 @@ void CommandHandler::Help(std::string_view initial_argument) {
 		std::optional<Command> input_command = StringToCommand(argument);
 		if (!input_command.has_value()) {
 			if (argument == "commands") {
-				for (const auto& command : GetCommandList()) {
+				constexpr auto command_list = GetCommandList();
+				for (const auto& command : command_list) {
 					std::cout << '\t' << command;
 				}
 				std::cout << std::endl;
@@ -234,13 +172,14 @@ void CommandHandler::Show(std::string_view argument) const {
 		}
 	}
 	else if (argument == "tokens") {
+		constexpr size_t max_category_length = GetMaxCategoryLength();
 		for (ptrdiff_t line_num = 0, num_lines = file_tokens.size(); line_num < num_lines; ++line_num) {
 			std::cout << "Line " << line_num << ":" << std::endl;
 			const auto& token_line = file_tokens.at(line_num);
 			for (ptrdiff_t token_num = 0, num_tokens = token_line.size(); token_num < num_tokens; ++token_num) {
 				const auto& curr_token = token_line.at(token_num);
-				std::cout << '\t' << '[' << token_num << ']' << ": " << CategoryToString(curr_token.category) << "\t\t";
-				std::visit([](const auto& v) {std::cout << v; }, curr_token.value);	// token contents
+				std::cout << '\t' << '[' << token_num << ']' << ": " << std::left << std::setw(max_category_length + 1) << CategoryToString(curr_token.category);
+				std::visit([max_category_length](const auto& v) {std::cout << v; }, curr_token.value);	// token contents
 				std::cout << std::endl;
 			}
 		}
@@ -251,6 +190,10 @@ void CommandHandler::Show(std::string_view argument) const {
 	else {
 		throw std::invalid_argument("invalid argument");
 	}
+}
+
+void CommandHandler::Run() const {
+	
 }
 
 void CommandHandler::ClearData() {

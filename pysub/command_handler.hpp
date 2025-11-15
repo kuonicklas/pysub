@@ -2,6 +2,7 @@
 #define COMMAND_HANDLER
 
 #include "globals.hpp"
+#include "magic_enum.hpp"
 
 #include <optional>
 
@@ -24,15 +25,25 @@ public:
 	static std::optional<Command> StringToCommand(std::string_view command);
 	static std::string CategoryToString(Category category);
 
-	static std::vector<std::string> GetCommandList();
+	static constexpr auto GetCommandList();
+	static constexpr size_t GetMaxCategoryLength();
 	void Execute(const Command command, std::string_view argument = "");
 	static void Help(std::string_view argument = "");
 	void Read(const std::string& filename);
 	void Show(std::string_view argument) const;
+	void Run() const;
 	void ClearData();
 private:
 	std::vector<std::string> file_lines{};
 	std::vector<TokenLine> file_tokens{};
 };
+
+constexpr auto CommandHandler::GetCommandList() {
+	return magic_enum::enum_names<Command>();
+}
+
+constexpr size_t CommandHandler::GetMaxCategoryLength() {
+	return std::max_element(std::begin(magic_enum::enum_names<Category>()), std::end(magic_enum::enum_names<Category>()), [](const auto& l, const auto& r) {return l.size() < r.size(); })->size();
+}
 
 #endif

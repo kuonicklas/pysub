@@ -1,5 +1,5 @@
 TODO:
--align the columns of show(tokens) output
+-show(variables) argument for show()
 
 -remember to remove whitespaces for the output of getline
 
@@ -13,3 +13,32 @@ future features:
 
 notes:
 -max int representation is not [int min, int max], but (int min, int max]. This is because the negative sign and the digits are treated separately in intermediate stages, and the absolute value must be storable into a normal int.
+
+--------
+
+reset symbol table when switching between inlin
+
+ideally, expevaluator returns the symbol table
+
+Execution -> file, tokens, symbol table
+
+
+Execution from_interface
+Execution from_file
+
+
+
+-only one execution at a time.
+-if we run inline, and the current execution is not inline
+
+Execution current_execution; -> symbol table, file_lines, file_tokens
+
+Execution is std::variant<InterfaceExecution, FileExecution>
+
+// when we run inline (and curr_execution.type == File), we clear data, i.e. replace with a new object
+// when we run a file and curr_execution.type == Interface, we delete also clear data.
+--for interface, we gather the lines, get tokens, and do curr_execution.RunCode(tokens)
+--for a file, we call 'read', which creates a new execution and stores the lines and tokens (curr_execution.SetFile(lines), and call curr_execution.RunFile(), which is a wrapper for RunCode(file_tokens)
+---maybe "Read" should be in the execution (so curr_execution.ReadFile, curr_execution.GetFileLines, curr_execution.GetTokens, curr_execution.Run)
+
+maybe we *do* use inheritance. so Execution -> FileExecution and InterfaceExecution. Execution has a symbol table and RunCode(tokens). The children do private inheritance, so that RunCode(tokens) cannot be called from the user. InterfaceExecution has RunLines(tokens), which just calls RunCode(tokens). FileExecution only has RunFile().
