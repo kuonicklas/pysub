@@ -2,6 +2,8 @@
 #define COMMAND_HANDLER
 
 #include "globals.hpp"
+#include "execution.hpp"
+
 #include "magic_enum.hpp"
 
 #include <optional>
@@ -34,8 +36,7 @@ public:
 	void Run() const;
 	void ClearData();
 private:
-	std::vector<std::string> file_lines{};
-	std::vector<TokenLine> file_tokens{};
+	std::variant<FileExecution, InterfaceExecution> curr_execution;
 };
 
 constexpr auto CommandHandler::GetCommandList() {

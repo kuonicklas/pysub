@@ -23,8 +23,10 @@ enum class Category
     Indent
 };
 
+using ValueType = std::variant<std::string, int>;
+
 struct Token {
-    std::variant<std::string, int> value;
+    ValueType value;
     Category category;
 
     bool operator==(const Token& rhs) const {

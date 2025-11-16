@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
-#include <fstream>
 
 // returns true if any token contains a command
 //bool CommandHandler::IsCommand(const TokenLine& token_line) {
@@ -54,7 +53,6 @@ void CommandHandler::Execute(const Command command, std::string_view argument) {
 	case Command::Read: {
 		try {
 			Read(std::string{ argument });	// copy is necessary here
-			file_tokens = LexicalAnalyzer::GenerateTokens(file_lines);
 		}
 		catch (const std::exception& ex) {
 			throw InputParser::AddContext("read error: ", ex);
@@ -150,19 +148,8 @@ void CommandHandler::Help(std::string_view initial_argument) {
 
 // const std::string& instead of std::string_view because file opening does not support std::string_view ._.
 void CommandHandler::Read(const std::string& filename) {
-	std::ifstream input_file(filename);
-	if (input_file.fail()) {
-		throw std::invalid_argument("error opening file");
-	}
-	if ((filename.size() < 3) || (filename.substr(filename.length() - 3, 3) != ".py"))
-		throw std::invalid_argument("non-python files are not accepted");
-
-	std::string line{};
-	ClearData();
-	while (std::getline(input_file, line)) {
-		file_lines.push_back(line);
-	}
-	input_file.close();
+	FileExecution new_file_execution(filename);
+	curr_execution = new_file_execution;
 }
 
 void CommandHandler::Show(std::string_view argument) const {
