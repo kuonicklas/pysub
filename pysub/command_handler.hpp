@@ -33,10 +33,10 @@ public:
 	static void Help(std::string_view argument = "");
 	void Read(const std::string& filename);
 	void Show(std::string_view argument) const;
-	void Run() const;
+	void Run();
 	void ClearData();
 private:
-	std::variant<FileExecution, InterfaceExecution> curr_execution;
+	std::variant<InterfaceExecution, FileExecution> curr_execution{};	// InterfaceExecution is the default
 };
 
 constexpr auto CommandHandler::GetCommandList() {

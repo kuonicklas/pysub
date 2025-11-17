@@ -32,8 +32,14 @@ int main()
 			}
 			else {
 				// ...as code
-			//	int expression_value = expression_evaluator.evaluate(input_tokens);
-			//	std::cout << expression_value << std::endl;
+				// 
+				// if is conditional
+				//		while input
+				//			grab more lines
+				//	run
+				// 
+				//	int expression_value = expression_evaluator.evaluate(input_tokens);
+				//	std::cout << expression_value << std::endl;
 			}
 		}
 		catch (const std::exception& ex) {

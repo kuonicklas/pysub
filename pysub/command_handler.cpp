@@ -154,36 +154,53 @@ void CommandHandler::Read(const std::string& filename) {
 
 void CommandHandler::Show(std::string_view argument) const {
 	if (argument == "") {
+		if (!std::holds_alternative<FileExecution>(curr_execution)) {
+			throw std::invalid_argument("No file has been opened!");
+		}
+		const auto& file_lines = std::get<FileExecution>(curr_execution).GetFileLines();
 		for (ptrdiff_t i = 0, size = file_lines.size(); i < size; ++i) {
 			std::cout << '[' << i << ']' << file_lines.at(i) << std::endl;
 		}
 	}
 	else if (argument == "tokens") {
 		constexpr size_t max_category_length = GetMaxCategoryLength();
+		if (!std::holds_alternative<FileExecution>(curr_execution)) {
+			throw std::invalid_argument("No file has been opened!");
+		}
+		const auto& file_tokens = std::get<FileExecution>(curr_execution).GetFileTokens();
 		for (ptrdiff_t line_num = 0, num_lines = file_tokens.size(); line_num < num_lines; ++line_num) {
 			std::cout << "Line " << line_num << ":" << std::endl;
 			const auto& token_line = file_tokens.at(line_num);
 			for (ptrdiff_t token_num = 0, num_tokens = token_line.size(); token_num < num_tokens; ++token_num) {
 				const auto& curr_token = token_line.at(token_num);
 				std::cout << '\t' << '[' << token_num << ']' << ": " << std::left << std::setw(max_category_length + 1) << CategoryToString(curr_token.category);
-				std::visit([max_category_length](const auto& v) {std::cout << v; }, curr_token.value);	// token contents
+				std::visit([](const auto& v) {std::cout << v; }, curr_token.value);	// token contents
 				std::cout << std::endl;
 			}
 		}
 	}
 	else if (argument == "variables") {
 		// display symbol table contents
+		const std::unordered_map<std::string, ValueType>* symbol_table{};
+		std::visit([&symbol_table](const auto& v) {symbol_table = &v.GetSymbolTable(); }, curr_execution);
+		for (const auto& pair : *symbol_table) {
+			std::cout << pair.first << " = ";
+			std::visit([](const auto& v) {std::cout << v; }, pair.second);
+			std::cout << std::endl;
+		}
 	}
 	else {
 		throw std::invalid_argument("invalid argument");
 	}
 }
 
-void CommandHandler::Run() const {
-	
+void CommandHandler::Run() {
+	if (!std::holds_alternative<FileExecution>(curr_execution)) {
+		throw std::invalid_argument("No file to run!");
+	}
+	std::get<FileExecution>(curr_execution).Run();
 }
 
 void CommandHandler::ClearData() {
-	file_lines.clear();
-	file_tokens.clear();
+	curr_execution = InterfaceExecution{};
 }
