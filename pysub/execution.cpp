@@ -3,14 +3,15 @@
 #include "input_parser.hpp"
 
 #include <fstream>
+#include <sstream>
 
 #include <iostream>	// TEMP! REMOVE after RunCode is defined
 
 /* Execution functions */
 
-void Execution::RunCode(const std::vector<TokenLine>& token_lines) {
+void Execution::RunCode(const std::vector<Token>& tokens) {
 	// do stuff with interpreter
-	size_t i = token_lines.size();
+	size_t i = tokens.size();
 	std::cout << i << std::endl;	// temp line of code to avoid warnings
 }
 
@@ -30,8 +31,13 @@ FileExecution::FileExecution(const std::string& filename) {
 		throw std::invalid_argument("non-python files are not accepted");
 	}
 
-	std::string line{};
-	while (std::getline(input_file, line)) {
+	std::ostringstream file_contents{};
+	file_contents << input_file.rdbuf();
+	file_string = file_contents.str();	// replace with the read method that avoids string duplication in sstream
+
+	auto  input_file.rdbuf();
+
+	while (std::getline(input_file, line, '\0')) {
 		file_lines.push_back(line);
 	}
 	input_file.close();
@@ -52,10 +58,10 @@ void FileExecution::Run() {
 	execution = new_execution;
 }
 
-const std::vector<std::string>& FileExecution::GetFileLines() const {
-	return file_lines;
+const std::string& FileExecution::GetFileString() const {
+	return file_string;
 }
-const std::vector<TokenLine>& FileExecution::GetFileTokens() const {
+const std::vector<Token>& FileExecution::GetFileTokens() const {
 	return file_tokens;
 }
 
@@ -65,8 +71,8 @@ const std::unordered_map<std::string, ValueType>& FileExecution::GetSymbolTable(
 
 /* InterfaceExecution functions */
 
-void InterfaceExecution::Run(const std::vector<TokenLine>& token_lines) {
-	execution.RunCode(token_lines);
+void InterfaceExecution::Run(const std::vector<Token>& tokens) {
+	execution.RunCode(tokens);
 }
 
 const std::unordered_map<std::string, ValueType>& InterfaceExecution::GetSymbolTable() const {

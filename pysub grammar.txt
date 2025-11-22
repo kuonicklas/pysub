@@ -1,0 +1,138 @@
+-todo:
+	(1) implement Category::Newline
+	(2) implement Category::Dedent (requires changing how "indent" works. you indent only once, and it applies until a "dedent". when parsing  a string, we keep track of the indent count (=0). we count the number of indents in the beginning of a line. if it equals the indent count, don't add an indent token. if it exceeds it, add indents equal to that number. if it is less, add dedents equal to that number.
+
+	parse not std::vector<TokenLine>, but simply 'TokenLine'
+	add Category::Newline, Category::Dedent, and possibly a separate Category for each operator.
+	add 'newline' and 'dedent'
+
+-determining whether something is "incomplete," and deciding to include/not include the next newline is puzzling:
+	-we can throw a certain EOF error if a line is incomplete vs. if a  (multi-line) statement is incomplete.
+	-if the line is incomplete, we discard the newline. if the line is complete, but more expected, we keep the newline.
+
+notes:
+	'-->' is a translation of a (left-recursive) rule into an equivalent non-left-recursive one.
+
+AST:
+	[statements]
+
+statements:
+	statement+
+
+statement:
+	compound_stmt
+	simple_stmt (NEWLINE | EOF)	// excuse the lack of NEWLINE at eof
+
+simple_stmt:
+	assignment
+	expression
+
+compound_stmt:
+	if_stmt
+	while_stmt
+
+if_stmt:
+	'if' expression ':' block elif_stmt
+	'if' expression ':' [else_block]
+elif_stmt:
+	'elif' expression ':' block elif_stmt
+	'elif' expression ':' [else_block]
+else_block:
+	'else' ':' block
+
+while_stmt:
+	'while' expression ':' block [else_block]
+
+block:
+	NEWLINE INDENT statements (DEDENT | EOF)
+
+assignment:
+	NAME '=' expression
+
+expression:
+	conjunction ('or' conjunction)+
+	conjunction
+
+conjunction:
+	inversion ('and' inversion)+
+	inversion
+
+inversion:
+	'not' inversion
+	comparison
+
+comparison:
+	sum compare_op_sum+
+	sum
+
+compare_op_sum:
+	eq
+	noteq
+	lte
+	lt
+	gte
+	gt
+
+eq:
+	'==' sum
+noteq:
+	('!=') sum
+lte:
+	'<=' sum
+lt:
+	'<' sum
+gte:
+	'>=' sum
+gt:
+	'>' sum
+
+sum:
+	sum '+' term
+	sum '-' term
+	term
+	--> term (('+' | '-') term)*
+
+term:
+	term '*' factor
+	term '/' factor 
+	factor
+	--> factor (('*'|'/') factor)*
+
+factor:
+	'+' factor
+	'-' factor
+	primary
+
+primary:
+	primary '(' [arguments] ')'
+	atom
+	--> NAME '(' [arguments] ')'
+	--> atom
+	(note: hopefully this translation is correct)
+atom:
+	NAME
+	NUMBER
+	group
+
+group:
+	'(' expression ')'
+
+arguments:
+	args [','] &')'
+
+args:
+	','.(expression) !'=')+
+
+newline mechanics:
+
+-when reading a file, we simply read token-by-token, including any newline chars.
+-when reading line-by-line: the stream automatically delimits by newline. we can get all of it at once. this will include the final newline.
+
+-when tokenizing a string (including a file), we should track all open paren tokens and discard all newlines that occur while any open parens are still on the stack. (this further schisms the actual text and the tokens, but it's already being mangled by the way im gonna do indents, so who cares.)
+
+-incompleteness:
+	-implicit line continuation (i.e. encountering an eof) is valid within '(' (among others). (so if eof is thrown when there is still an open paren)
+	-whenever an unexpected eof occurs right after a colon in a compound statement
+
+-if a line is deemed incomplete:
+	-grab another line, add it to the string, tokenize the line, add it to the token stream, and parse the whole thing.

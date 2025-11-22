@@ -24,7 +24,7 @@ public:
 	static bool IsArithmeticOperator(char c);
 
 	// parsing
-	static std::optional<std::string> GetCommandArgument(const TokenLine& token_line);
+	static std::optional<std::string> GetCommandArgument(const std::vector<Token>& token_line);
 
 	// exceptions
 	static std::exception AddContext(const std::string& context, const std::exception& ex);

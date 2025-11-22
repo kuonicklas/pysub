@@ -5,8 +5,7 @@
 
 class LexicalAnalyzer {
 public:
-	static std::vector<TokenLine> GenerateTokens(const std::vector<std::string>& input_code);
-	static TokenLine GenerateTokens(std::string input_code);
+	static std::vector<Token> GenerateTokens(std::string_view input_string);
 };
 
 #endif

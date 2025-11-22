@@ -59,7 +59,7 @@ bool InputParser::IsArithmeticOperator(char c) {
 	return c == '+' || c == '-' || c == '*' || c == '/' || c == '%';
 }
 
-std::optional<std::string> InputParser::GetCommandArgument(const TokenLine& token_line) {
+std::optional<std::string> InputParser::GetCommandArgument(const std::vector<Token>& token_line) {
 	auto iter = std::begin(token_line);
 
 	// command
@@ -90,7 +90,7 @@ std::optional<std::string> InputParser::GetCommandArgument(const TokenLine& toke
 		argument = std::get<std::string>(iter->value);
 		++iter;
 	}
-	if (iter->category != Category::RightParenthesis) {
+	if (iter == std::end(token_line) || iter->category != Category::RightParenthesis) {
 		throw std::invalid_argument("expected right parenthesis after command argument");
 	}
 	++iter;

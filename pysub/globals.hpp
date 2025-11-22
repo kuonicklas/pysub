@@ -20,7 +20,9 @@ enum class Category
     Colon,
     Comma,
     Comment,
-    Indent
+    Indent,
+    Dedent,
+    Newline
 };
 
 using ValueType = std::variant<std::string, int>;
@@ -33,7 +35,5 @@ struct Token {
         return this->category == rhs.category && this->value == rhs.value;
     }
 };
-
-using TokenLine = std::vector<Token>;
 
 #endif

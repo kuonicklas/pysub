@@ -1,0 +1,50 @@
+// PARSER
+class Parser{
+public:
+	GetAST();
+	CheckSyntax(tokens);	// non-allocating parse
+	BuildTree(tokens);	// allocating parse
+	Parse(tokens);	// CheckSyntax and BuildTree call this
+private:
+	bool is_allocating
+	AST syntax_tree{}
+	std::iterator curr_token;
+}
+
+void CheckSyntax(tokens){
+	is_allocating = false;
+	Parse();
+}
+
+void BuildTree(tokens){
+	is_allocating = true;
+	Parse();
+}
+
+void Parse(tokens){
+	
+}
+
+class AST_TYPE{
+public:
+	Store(stuff)
+}
+
+// AST
+// well, it depends on what we got, right?
+class AST{
+
+}
+
+std::vector<Statement>
+while (!eof){
+	Statement new_statement = Statement();
+	Store(Statement);
+	if (allocate){
+		vector.push_back(new_statement);
+	}
+}
+
+STORE:
+if (allocate):
+	vec.push_back(statement);

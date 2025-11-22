@@ -1,7 +1,6 @@
 TODO:
--show(variables) argument for show()
-
 -remember to remove whitespaces for the output of getline
+-make sure we don't throw std::exception, but throw a derived object.
 
 -make sure '-' can be used as a unary operator ('-1')
 -make sure any number of minuses can be stacked (---1 == -1, 5--1 == 6)
@@ -10,6 +9,14 @@ TODO:
 future features:
 -support for floats (not just integers)
 -throw an exception class that has the problematic line, the position, and the index (see how the python ui throws errors)
+-ctrl+C to KeyboardInterrupt (terminate a running script). run on another thread.
+-augassign (augmented assignment statements): +=, -=, etc. (see grammar for the rest)
+-chaining assignment (NAME '=')+ annotated_rhs
+-pass, break, and continue statements
+-for_stmt
+-booleans: 'True', 'False'
+-strings as an atom
+-python indent rules. indents can be arbitrary in length, but the ensuing block must have that same number of indents. nested blocks must have a longer indent than the surrounding block. thus, track the length of the indents for a block. (question: how does 
 
 notes:
 -max int representation is not [int min, int max], but (int min, int max]. This is because the negative sign and the digits are treated separately in intermediate stages, and the absolute value must be storable into a normal int.
