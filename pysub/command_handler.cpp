@@ -7,7 +7,7 @@
 #include <iomanip>
 
 // returns true if any token contains a command
-//bool CommandHandler::IsCommand(const TokenLine& token_line) {
+//bool CommandHandler::IsCommand(const std::vector<Token>& token_line) {
 //	return std::any_of(std::begin(token_line), std::end(token_line), [](const auto& token) -> bool {
 //		return token.category == Category::Identifier && IsCommand(std::get<std::string>(token.value));
 //		});
@@ -18,7 +18,7 @@
 //	return GetCommand(command).has_value();
 //}
 
-std::optional<Command> CommandHandler::GetCommand(const TokenLine& token_line) noexcept {
+std::optional<Command> CommandHandler::GetCommand(const std::vector<Token>& token_line) noexcept {
 	if (token_line.empty() || !std::holds_alternative<std::string>(token_line.front().value)) {
 		return {};
 	}
@@ -55,7 +55,7 @@ void CommandHandler::Execute(const Command command, std::string_view argument) {
 			Read(std::string{ argument });	// copy is necessary here
 		}
 		catch (const std::exception& ex) {
-			throw InputParser::AddContext("read error: ", ex);
+			throw InputParser::AddContext("read error", ex);
 		}
 		break;
 	}
@@ -157,37 +157,21 @@ void CommandHandler::Show(std::string_view argument) const {
 		if (!std::holds_alternative<FileExecution>(curr_execution)) {
 			throw std::invalid_argument("No file has been opened!");
 		}
-		const auto& file_lines = std::get<FileExecution>(curr_execution).GetFileLines();
-		for (ptrdiff_t i = 0, size = file_lines.size(); i < size; ++i) {
-			std::cout << '[' << i << ']' << file_lines.at(i) << std::endl;
-		}
+		const auto& file_string = std::get<FileExecution>(curr_execution).GetFileString();
+		std::cout << file_string << std::endl;
 	}
 	else if (argument == "tokens") {
-		constexpr size_t max_category_length = GetMaxCategoryLength();
 		if (!std::holds_alternative<FileExecution>(curr_execution)) {
 			throw std::invalid_argument("No file has been opened!");
 		}
 		const auto& file_tokens = std::get<FileExecution>(curr_execution).GetFileTokens();
-		for (ptrdiff_t line_num = 0, num_lines = file_tokens.size(); line_num < num_lines; ++line_num) {
-			std::cout << "Line " << line_num << ":" << std::endl;
-			const auto& token_line = file_tokens.at(line_num);
-			for (ptrdiff_t token_num = 0, num_tokens = token_line.size(); token_num < num_tokens; ++token_num) {
-				const auto& curr_token = token_line.at(token_num);
-				std::cout << '\t' << '[' << token_num << ']' << ": " << std::left << std::setw(max_category_length + 1) << CategoryToString(curr_token.category);
-				std::visit([](const auto& v) {std::cout << v; }, curr_token.value);	// token contents
-				std::cout << std::endl;
-			}
-		}
+		PrintTokenLine(file_tokens);
 	}
 	else if (argument == "variables") {
 		// display symbol table contents
 		const std::unordered_map<std::string, ValueType>* symbol_table{};
 		std::visit([&symbol_table](const auto& v) {symbol_table = &v.GetSymbolTable(); }, curr_execution);
-		for (const auto& pair : *symbol_table) {
-			std::cout << pair.first << " = ";
-			std::visit([](const auto& v) {std::cout << v; }, pair.second);
-			std::cout << std::endl;
-		}
+		PrintSymbolTable(symbol_table);
 	}
 	else {
 		throw std::invalid_argument("invalid argument");
@@ -203,4 +187,27 @@ void CommandHandler::Run() {
 
 void CommandHandler::ClearData() {
 	curr_execution = InterfaceExecution{};
+}
+
+void CommandHandler::PrintTokenLine(const std::vector<Token>& token_line) {
+	constexpr size_t max_category_length = GetMaxCategoryLength();
+
+	for (ptrdiff_t i = 0, num_tokens = token_line.size(), line_num = 0; i < num_tokens; ++i) {
+		const auto& curr_token = token_line.at(i);
+		if (i == 0 || (i > 0 && token_line.at(i - 1).category == Category::Newline)) {
+			// wait until after a newline token is processed to start next line, except for the first
+			std::cout << "Line " << line_num++ << ":" << std::endl;
+		}
+		std::cout << '\t' << '[' << i << ']' << ": " << std::left << std::setw(max_category_length + 1) << CategoryToString(curr_token.category);
+		std::visit([](const auto& v) {std::cout << v; }, curr_token.value);
+		std::cout << std::endl;
+	}
+}
+
+void CommandHandler::PrintSymbolTable(const std::unordered_map<std::string, ValueType>* symbol_table) {
+	for (const auto& pair : *symbol_table) {
+		std::cout << pair.first << " = ";
+		std::visit([](const auto& v) {std::cout << v; }, pair.second);
+		std::cout << std::endl;
+	}
 }

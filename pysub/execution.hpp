@@ -4,6 +4,7 @@
 #include "globals.hpp"
 
 #include <unordered_map>
+#include <filesystem>
 
 // we avoid using inheritance by using std::variant and composition because I don't like heap allocation.
 
@@ -24,8 +25,9 @@ public:
 	const std::unordered_map<std::string, ValueType>& GetSymbolTable() const;
 private:
 	Execution execution{};
-	std::string file_string{};
+	std::string file_string;
 	std::vector<Token> file_tokens{};
+	static std::string ReadEntireFile(std::filesystem::path file_path);
 };
 
 class InterfaceExecution {

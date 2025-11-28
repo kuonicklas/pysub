@@ -1,4 +1,5 @@
 TODO:
+-better error reporting for lexer
 -remember to remove whitespaces for the output of getline
 -make sure we don't throw std::exception, but throw a derived object.
 

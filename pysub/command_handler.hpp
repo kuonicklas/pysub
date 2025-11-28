@@ -23,7 +23,7 @@ class CommandHandler {
 public:
 	/*static bool IsCommand(const TokenLine& token_line);
 	static bool IsCommand(const std::string& command);*/
-	static std::optional<Command> GetCommand(const TokenLine& token_line) noexcept;
+	static std::optional<Command> GetCommand(const std::vector<Token>& token_line) noexcept;
 	static std::optional<Command> StringToCommand(std::string_view command);
 	static std::string CategoryToString(Category category);
 
@@ -37,6 +37,8 @@ public:
 	void ClearData();
 private:
 	std::variant<InterfaceExecution, FileExecution> curr_execution{};	// InterfaceExecution is the default
+	static void PrintTokenLine(const std::vector<Token>& token_line);
+	static void PrintSymbolTable(const std::unordered_map<std::string, ValueType>* symbol_table);
 };
 
 constexpr auto CommandHandler::GetCommandList() {

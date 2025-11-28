@@ -21,7 +21,7 @@ int main()
 			std::getline(std::cin, input_line);
 
 			// process input
-			TokenLine input_tokens = LexicalAnalyzer::GenerateTokens(input_line);
+			std::vector<Token> input_tokens = LexicalAnalyzer::GenerateTokens(input_line);
 			auto command = CommandHandler::GetCommand(input_tokens);
 
 			// evaluate

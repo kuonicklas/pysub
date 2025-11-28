@@ -4,8 +4,8 @@
 
 #include <fstream>
 #include <sstream>
-
 #include <iostream>	// TEMP! REMOVE after RunCode is defined
+#include <cassert>
 
 /* Execution functions */
 
@@ -22,32 +22,13 @@ const std::unordered_map<std::string, ValueType>& Execution::GetSymbolTable() co
 /* FileExecution functions */
 
 FileExecution::FileExecution(const std::string& filename) {
-	// read file
-	std::ifstream input_file(filename);
-	if (input_file.fail()) {
-		throw std::invalid_argument("error opening file");
-	}
-	if ((filename.size() < 3) || (filename.substr(filename.length() - 3, 3) != ".py")) {
-		throw std::invalid_argument("non-python files are not accepted");
-	}
+	file_string = ReadEntireFile(filename);
 
-	std::ostringstream file_contents{};
-	file_contents << input_file.rdbuf();
-	file_string = file_contents.str();	// replace with the read method that avoids string duplication in sstream
-
-	auto  input_file.rdbuf();
-
-	while (std::getline(input_file, line, '\0')) {
-		file_lines.push_back(line);
-	}
-	input_file.close();
-
-	// get tokens
 	try {
-		file_tokens = LexicalAnalyzer::GenerateTokens(file_lines);
+		file_tokens = LexicalAnalyzer::GenerateTokens(file_string);
 	}
 	catch (const std::exception& ex) {
-		throw InputParser::AddContext("input parser: ", ex);
+		throw InputParser::AddContext("lexer", ex);
 	}
 }
 
@@ -67,6 +48,19 @@ const std::vector<Token>& FileExecution::GetFileTokens() const {
 
 const std::unordered_map<std::string, ValueType>& FileExecution::GetSymbolTable() const {
 	return execution.GetSymbolTable();
+}
+
+std::string FileExecution::ReadEntireFile(std::filesystem::path file_path) {
+	std::ifstream file_stream(file_path);
+	if (file_stream.fail()) {
+		throw std::runtime_error("error opening file");
+	}
+	const auto file_size = std::filesystem::file_size(file_path);
+	std::string output(file_size, '\0');
+	file_stream.read(output.data(), file_size);
+	auto last = output.find_first_of('\0');	// file_size may exceed size of its contents, so we shrink
+	output.resize(last);
+	return output;
 }
 
 /* InterfaceExecution functions */

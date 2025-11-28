@@ -6,6 +6,8 @@
 
 #include "../pysub/lexical_analyzer.cpp"
 #include "../pysub/input_parser.cpp"
+#include "../pysub/execution.cpp"
+#include <vcpkg_installed/x64-windows/x64-windows/include/magic_enum/magic_enum.hpp>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -58,12 +60,11 @@ namespace Microsoft::VisualStudio::CppUnitTestFramework {
 
 	std::wstringstream& operator<<(std::wstringstream& stream, const Token& token) {
 		// convert to wstring
-		if (token.value.index() == 0) {
-			stream << std::get<std::string>(token.value);
-		}
-		else {
-			stream << std::get<int>(token.value);
-		}
+		stream << '{';
+		stream << ToWString(magic_enum::enum_name(token.category).data());
+		stream << ',';
+		std::visit([&](auto val) {stream << val; }, token.value);
+		stream << '}';
 		return stream;
 	}
 
@@ -230,7 +231,7 @@ namespace tests
 			Assert::ExpectException<std::invalid_argument>(func);
 		}
 		TEST_METHOD(MultipleLines) {
-			std::string input{ "if (1+1 == 2):\n\tprint(\"hello world!\")" };
+			std::string input{ "if (1+1\t == 2):\n\tprint(\"hello world!\")" };
 			std::vector<Token> actual = LexicalAnalyzer::GenerateTokens(input);
 			std::vector<Token> expected{
 				{"if", Category::Keyword}, {"", Category::LeftParenthesis}, {1, Category::NumericLiteral},
@@ -238,6 +239,23 @@ namespace tests
 				{"", Category::RightParenthesis}, {"", Category::Colon}, {"", Category::Newline},
 				{"", Category::Indent}, {"print", Category::Keyword}, {"", Category::LeftParenthesis}, {"hello world!", Category::StringLiteral}, {"", Category::RightParenthesis}
 			};
+			Assert::AreEqual(expected, actual);
+		}
+	};
+	TEST_CLASS(ExecutionTest) {
+	public:
+		TEST_METHOD(ReadFile) {
+			std::string expected = "#PROVIDED EXAMPLE\n"
+				"print(\"hello\",\'world!\')\n"
+				"x=3\n"
+				"\n"
+				"\n"
+				"print(\"X is equal to:\",x)\n"
+				"y = int(input(\"Enter value for y: \"))\n"
+				"print(\"Y + 3 is:\", y + 3)";
+			// test binary is in pysub/x64/Debug
+			FileExecution file("../../files_for_testing/read_file_test.py");
+			std::string actual = file.GetFileString();
 			Assert::AreEqual(expected, actual);
 		}
 	};
