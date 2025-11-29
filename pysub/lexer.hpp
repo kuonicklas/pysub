@@ -1,9 +1,9 @@
-#ifndef LEXICAL_ANALYZER_HPP
-#define LEXICAL_ANALYZER_HPP
+#ifndef LEXER_HPP
+#define LEXER_HPP
 
 #include "globals.hpp"
 
-class LexicalAnalyzer {
+class Lexer {
 public:
 	static std::vector<Token> GenerateTokens(std::string_view input_string);
 };

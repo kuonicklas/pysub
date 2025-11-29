@@ -1,6 +1,5 @@
 #include "command_handler.hpp"
-#include "input_parser.hpp"
-#include "lexical_analyzer.hpp"
+#include "lexer.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -55,7 +54,7 @@ void CommandHandler::Execute(const Command command, std::string_view argument) {
 			Read(std::string{ argument });	// copy is necessary here
 		}
 		catch (const std::exception& ex) {
-			throw InputParser::AddContext("read error", ex);
+			throw Utilities::AddContext("read error", ex);
 		}
 		break;
 	}
@@ -96,8 +95,8 @@ void CommandHandler::Help(std::string_view initial_argument) {
 			// get argument from user
 			std::cout << "help> ";
 			std::getline(std::cin, input_line);
-			InputParser::TrimLeadingAndTrailingWhitespaces(input_line);
-			InputParser::ToLowerCase(input_line);
+			Utilities::TrimLeadingAndTrailingWhitespaces(input_line);
+			Utilities::ToLowerCase(input_line);
 		}
 		std::string_view argument = initial_argument_provided ? initial_argument : input_line;
 

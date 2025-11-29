@@ -4,8 +4,9 @@ public:
 	GetAST();
 	CheckSyntax(tokens);	// non-allocating parse
 	BuildTree(tokens);	// allocating parse
-	Parse(tokens);	// CheckSyntax and BuildTree call this
+	
 private:
+	Parse(tokens);	// CheckSyntax and BuildTree call this
 	bool is_allocating
 	AST syntax_tree{}
 	std::iterator curr_token;
@@ -44,7 +45,8 @@ while (!eof){
 		vector.push_back(new_statement);
 	}
 }
+return 
 
 STORE:
-if (allocate):
+if (is_allocating):
 	vec.push_back(statement);

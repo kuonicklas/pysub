@@ -1,6 +1,5 @@
 #include "execution.hpp"
-#include "lexical_analyzer.hpp"
-#include "input_parser.hpp"
+#include "lexer.hpp"
 
 #include <fstream>
 #include <sstream>
@@ -25,10 +24,10 @@ FileExecution::FileExecution(const std::string& filename) {
 	file_string = ReadEntireFile(filename);
 
 	try {
-		file_tokens = LexicalAnalyzer::GenerateTokens(file_string);
+		file_tokens = Lexer::GenerateTokens(file_string);
 	}
 	catch (const std::exception& ex) {
-		throw InputParser::AddContext("lexer", ex);
+		throw Utilities::AddContext("lexer", ex);
 	}
 }
 

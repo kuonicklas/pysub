@@ -1,6 +1,5 @@
 #include "command_handler.hpp"
-#include "input_parser.hpp"
-#include "lexical_analyzer.hpp"
+#include "lexer.hpp"
 
 #include <iostream>
 #include <string>
@@ -21,13 +20,13 @@ int main()
 			std::getline(std::cin, input_line);
 
 			// process input
-			std::vector<Token> input_tokens = LexicalAnalyzer::GenerateTokens(input_line);
+			std::vector<Token> input_tokens = Lexer::GenerateTokens(input_line);
 			auto command = CommandHandler::GetCommand(input_tokens);
 
 			// evaluate
 			if (command) {
 				// ...as a command
-				auto argument = InputParser::GetCommandArgument(input_tokens);
+				auto argument = Utilities::GetCommandArgument(input_tokens);
 				command_handler.Execute(command.value(), argument.value_or(""));
 			}
 			else {

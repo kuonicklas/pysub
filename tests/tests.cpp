@@ -4,9 +4,9 @@
 #include <windows.h>
 #include <limits>
 
-#include "../pysub/lexical_analyzer.cpp"
-#include "../pysub/input_parser.cpp"
+#include "../pysub/lexer.cpp"
 #include "../pysub/execution.cpp"
+#include "../pysub/globals.cpp"
 #include <vcpkg_installed/x64-windows/x64-windows/include/magic_enum/magic_enum.hpp>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
@@ -103,136 +103,152 @@ namespace tests
 	{
 	public:
 		TEST_METHOD(NumericLiteralValid) {
-			std::vector<Token> actual = LexicalAnalyzer::GenerateTokens("012345");
+			std::vector<Token> actual = Lexer::GenerateTokens("012345");
 			std::vector<Token> expected{ {12345, Category::NumericLiteral} };
 			Assert::AreEqual(expected, actual);
 
-			actual = LexicalAnalyzer::GenerateTokens("54321(");
+			actual = Lexer::GenerateTokens("54321(");
 			expected = { {54321, Category::NumericLiteral}, {"", Category::LeftParenthesis}};
 			Assert::AreEqual(expected, actual);
 		}
 		TEST_METHOD(NumericLiteralInvalid) {
-			auto func = []() {LexicalAnalyzer::GenerateTokens("1prince"); };
+			auto func = []() {Lexer::GenerateTokens("1prince"); };
 			Assert::ExpectException<std::invalid_argument>(func);
 		}
 		TEST_METHOD(NumericLiteralOutOfRange) {
 			// max
-			std::vector<Token> actual = LexicalAnalyzer::GenerateTokens(std::to_string(std::numeric_limits<int>::max()));
+			std::vector<Token> actual = Lexer::GenerateTokens(std::to_string(std::numeric_limits<int>::max()));
 			std::vector<Token> expected{ {std::numeric_limits<int>::max(), Category::NumericLiteral} };
 			Assert::AreEqual(expected, actual);
 
 			// min
 			// this is actually max + 1 (because we negative sign becomes a token)
-			actual = LexicalAnalyzer::GenerateTokens(std::to_string(std::numeric_limits<int>::min() + 1));
+			actual = Lexer::GenerateTokens(std::to_string(std::numeric_limits<int>::min() + 1));
 			expected = { {"-", Category::ArithmeticOperator}, { std::numeric_limits<int>::max(), Category::NumericLiteral }};
 			Assert::AreEqual(expected, actual);
 
 			// above
-			auto above = []() {LexicalAnalyzer::GenerateTokens(std::to_string(static_cast<long>(std::numeric_limits<int>::max()) + 1) ); };
+			auto above = []() {Lexer::GenerateTokens(std::to_string(static_cast<long>(std::numeric_limits<int>::max()) + 1) ); };
 			Assert::ExpectException<std::out_of_range>(above);
 
 			// below
-			auto below = []() {LexicalAnalyzer::GenerateTokens(std::to_string(static_cast<long>(std::numeric_limits<int>::min()))); };
+			auto below = []() {Lexer::GenerateTokens(std::to_string(static_cast<long>(std::numeric_limits<int>::min()))); };
 			Assert::ExpectException<std::out_of_range>(below);
 		}
 		TEST_METHOD(IdentifierValid)
 		{
-			std::vector<Token> actual = LexicalAnalyzer::GenerateTokens("prince");
+			std::vector<Token> actual = Lexer::GenerateTokens("prince");
 			std::vector<Token> expected{ {"prince", Category::Identifier}};
 			Assert::AreEqual(expected, actual);
 
-			actual = LexicalAnalyzer::GenerateTokens("_prince23");
+			actual = Lexer::GenerateTokens("_prince23");
 			expected = { {"_prince23", Category::Identifier} };
 			Assert::AreEqual(expected, actual);
 
-			actual = LexicalAnalyzer::GenerateTokens("prince+");
+			actual = Lexer::GenerateTokens("prince+");
 			expected = { {"prince", Category::Identifier}, {"+", Category::ArithmeticOperator}};
 			Assert::AreEqual(expected, actual);
 		}
 		TEST_METHOD(IdentifierInvalid) {
-			auto func = []() {LexicalAnalyzer::GenerateTokens("prince~"); };
+			auto func = []() {Lexer::GenerateTokens("prince~"); };
 			Assert::ExpectException<std::invalid_argument>(func);
 		}
 		TEST_METHOD(IdentifierCategory) {
-			std::vector<Token> actual = LexicalAnalyzer::GenerateTokens("print");
+			std::vector<Token> actual = Lexer::GenerateTokens("print");
 			std::vector<Token> expected{ {"print", Category::Keyword} };
 			Assert::AreEqual(expected, actual);
 
-			actual = LexicalAnalyzer::GenerateTokens("and");
+			actual = Lexer::GenerateTokens("and");
 			expected = { {"and", Category::LogicalOperator} };
 			Assert::AreEqual(expected, actual);
 		}
 		TEST_METHOD(StringLiteralValid) {
-			std::vector<Token> actual = LexicalAnalyzer::GenerateTokens("\"lit\'eral\"");
+			std::vector<Token> actual = Lexer::GenerateTokens("\"lit\'eral\"");
 			std::vector<Token> expected{ {"lit\'eral", Category::StringLiteral} };
 			Assert::AreEqual(expected, actual);
 		}
 		TEST_METHOD(StringLiteralInvalid) {
-			auto one_quote = []() {LexicalAnalyzer::GenerateTokens("\""); };
+			auto one_quote = []() {Lexer::GenerateTokens("\""); };
 			Assert::ExpectException<std::invalid_argument>(one_quote);
 
-			auto not_matching_quote = []() {LexicalAnalyzer::GenerateTokens("\"abc\'"); };
+			auto not_matching_quote = []() {Lexer::GenerateTokens("\"abc\'"); };
 			Assert::ExpectException<std::invalid_argument>(not_matching_quote);
 		}
 		TEST_METHOD(CommentValid) {
-			std::vector<Token> actual = LexicalAnalyzer::GenerateTokens("#blorp \t1234");
+			std::vector<Token> actual = Lexer::GenerateTokens("#blorp \t1234");
 			std::vector<Token> expected{ {"blorp \t1234", Category::Comment} };
 			Assert::AreEqual(expected, actual);
 		}
 		TEST_METHOD(ParenthesesValid) {
-			std::vector<Token> actual = LexicalAnalyzer::GenerateTokens("()");
+			std::vector<Token> actual = Lexer::GenerateTokens("()");
 			std::vector<Token> expected{ {"", Category::LeftParenthesis}, {"", Category::RightParenthesis} };
 			Assert::AreEqual(expected, actual);
 		}
 		TEST_METHOD(ColonValid) {
-			std::vector<Token> actual = LexicalAnalyzer::GenerateTokens(":");
+			std::vector<Token> actual = Lexer::GenerateTokens(":");
 			std::vector<Token> expected{ {"", Category::Colon} };
 			Assert::AreEqual(expected, actual);
 		}
 		TEST_METHOD(CommaValid) {
-			std::vector<Token> actual = LexicalAnalyzer::GenerateTokens(",");
+			std::vector<Token> actual = Lexer::GenerateTokens(",");
 			std::vector<Token> expected{ {"", Category::Comma} };
 			Assert::AreEqual(expected, actual);
 		}
 		TEST_METHOD(RelationalAssignmentValid) {
-			std::vector<Token> actual = LexicalAnalyzer::GenerateTokens("<<=>>=");
+			std::vector<Token> actual = Lexer::GenerateTokens("<<=>>=");
 			std::vector<Token> expected{ {"<", Category::RelationalOperator}, { "<=", Category::RelationalOperator }, {">", Category::RelationalOperator}, {">=", Category::RelationalOperator} };
 			Assert::AreEqual(expected, actual);
 
-			actual = LexicalAnalyzer::GenerateTokens("=");
+			actual = Lexer::GenerateTokens("=");
 			expected = { {"", Category::AssignmentOperator} };
 			Assert::AreEqual(expected, actual);
 
-			actual = LexicalAnalyzer::GenerateTokens("==");
+			actual = Lexer::GenerateTokens("==");
 			expected = { {"==", Category::RelationalOperator} };
 			Assert::AreEqual(expected, actual);
 
-			actual = LexicalAnalyzer::GenerateTokens("!=");
+			actual = Lexer::GenerateTokens("!=");
 			expected = { {"!=", Category::RelationalOperator} };
 			Assert::AreEqual(expected, actual);
 		}
 		TEST_METHOD(RelationalAssignmentInvalid) {
-			auto func = []() {LexicalAnalyzer::GenerateTokens("!"); };
+			auto func = []() {Lexer::GenerateTokens("!"); };
 			Assert::ExpectException<std::invalid_argument>(func);
 		}
 		TEST_METHOD(ArithmeticOperatorValid) {
-			std::vector<Token> actual = LexicalAnalyzer::GenerateTokens("+-*/%");
+			std::vector<Token> actual = Lexer::GenerateTokens("+-*/%");
 			std::vector<Token> expected{ {"+", Category::ArithmeticOperator}, {"-", Category::ArithmeticOperator},  {"*", Category::ArithmeticOperator},
 				{"/", Category::ArithmeticOperator}, {"%", Category::ArithmeticOperator}};
 			Assert::AreEqual(expected, actual);
 		}
 		TEST_METHOD(IndentValid) {
-			std::vector<Token> actual = LexicalAnalyzer::GenerateTokens("\t \t");
-			std::vector<Token> expected{ {"", Category::Indent}};
+			std::vector<Token> actual = Lexer::GenerateTokens("\t \t");
+			std::vector<Token> expected{ {"", Category::Indent}, {"", Category::Indent}, {"", Category::Indent} };
 			Assert::AreEqual(expected, actual);
 		}
 		TEST_METHOD(InvalidCharacter) {
-			auto func = []() {LexicalAnalyzer::GenerateTokens("^"); };
+			auto func = []() {Lexer::GenerateTokens("^"); };
 			Assert::ExpectException<std::invalid_argument>(func);
+		}
+		TEST_METHOD(IndentDedentValid) {
+			// equal indent
+			std::vector<Token> actual = Lexer::GenerateTokens("\t\n\t");
+			std::vector<Token> expected{ {"", Category::Indent}, {"", Category::Newline }};
+			Assert::AreEqual(expected, actual);
+
+			// multiple indents, one dedent
+			actual = Lexer::GenerateTokens("\t\t\n\t");
+			expected = { {"", Category::Indent}, {"", Category::Indent}, {"", Category::Newline}, {"", Category::Dedent}};
+			Assert::AreEqual(expected, actual);
+
+			// multiple dedents
+			actual = Lexer::GenerateTokens("\t\t\n123");
+			expected = { {"", Category::Indent}, {"", Category::Indent}, {"", Category::Newline}, {"", Category::Dedent}, {"", Category::Dedent}, { 123, Category::NumericLiteral } };
+			Assert::AreEqual(expected, actual);
 		}
 		TEST_METHOD(MultipleLines) {
 			std::string input{ "if (1+1\t == 2):\n\tprint(\"hello world!\")" };
-			std::vector<Token> actual = LexicalAnalyzer::GenerateTokens(input);
+			std::vector<Token> actual = Lexer::GenerateTokens(input);
 			std::vector<Token> expected{
 				{"if", Category::Keyword}, {"", Category::LeftParenthesis}, {1, Category::NumericLiteral},
 				{"+", Category::ArithmeticOperator}, {1, Category::NumericLiteral}, {"==", Category::RelationalOperator}, {2, Category::NumericLiteral},

@@ -1,25 +1,52 @@
-#include "lexical_analyzer.hpp"
-#include "input_parser.hpp"
+#include "lexer.hpp"
 
 #include <charconv>
 #include <stdexcept>
+#include <cassert>
 
-std::vector<Token> LexicalAnalyzer::GenerateTokens(std::string_view input_string) {
+std::vector<Token> Lexer::GenerateTokens(std::string_view input_string) {
 	std::vector<Token> tokens{};
 	//int curr_indent_num = 0;
 	
 	auto IsEndOfFile = [&input_string](const auto iter) {return iter == std::end(input_string) || *iter == '\0'; };
 	auto IsEndOfLine = [&](const auto iter) {return IsEndOfFile(iter) || *iter == '\n'; };
+	auto IsStartOfNewLine = [&]() {return tokens.empty() || tokens.back().category == Category::Newline; };
+	int indent_level = 0;
 
 	for (auto curr_char = std::begin(input_string); !IsEndOfFile(curr_char);) {
 		Token new_token{};
+
+		// check indentation
+		if (IsStartOfNewLine()) {
+			// note: dedents occur *after* a newline, not before. a block expects a dedent *after statement(s)*, and a statement is defined as ending with a newline (or eof).
+			int curr_indentation = 0;
+			const auto char_start = curr_char;
+			while (!IsEndOfLine(curr_char) && Utilities::IsWhitespace(*curr_char)) {
+				++curr_indentation;
+				++curr_char;
+			}
+			for (int i = 0; i < std::abs(curr_indentation - indent_level); ++i) {
+				Token new_indent_token{};
+				if (curr_indentation > indent_level) {
+					new_indent_token.category = Category::Indent;
+				}
+				else {
+					new_indent_token.category = Category::Dedent;
+				}
+				tokens.push_back(new_indent_token);
+			}
+			indent_level = curr_indentation;
+			if (char_start != curr_char) {
+				continue;	// stream has advanced; recheck loop condition
+			}
+		}
 
 		if (std::isdigit(*curr_char)) {
 			// numeric literal
 			new_token.category = Category::NumericLiteral;
 				
 			auto start_char = curr_char;
-			while (!IsEndOfLine(curr_char) && !InputParser::IsNewTokenChar(*curr_char)) {
+			while (!IsEndOfLine(curr_char) && !Utilities::IsNewTokenChar(*curr_char)) {
 				++curr_char;
 			}
 
@@ -42,7 +69,7 @@ std::vector<Token> LexicalAnalyzer::GenerateTokens(std::string_view input_string
 		else if (std::isalpha(*curr_char) || *curr_char == '_') {
 			// identifier, keyword, or logical operator
 			// '_' is valid for Python. numbers are valid if they are not first char.
-			while (!IsEndOfLine(curr_char) && !InputParser::IsNewTokenChar(*curr_char)) {
+			while (!IsEndOfLine(curr_char) && !Utilities::IsNewTokenChar(*curr_char)) {
 				if (!std::isalnum(*curr_char) && *curr_char != '_') {
 					throw std::invalid_argument("invalid identifier");
 				}
@@ -50,10 +77,10 @@ std::vector<Token> LexicalAnalyzer::GenerateTokens(std::string_view input_string
 				++curr_char;
 			}
 
-			if (InputParser::IsNonLogicalOperatorKeyword(std::get<std::string>(new_token.value))) {
+			if (Utilities::IsNonLogicalOperatorKeyword(std::get<std::string>(new_token.value))) {
 				new_token.category = Category::Keyword;
 			}
-			else if (InputParser::IsLogicalOperatorKeyword(std::get<std::string>(new_token.value))) {
+			else if (Utilities::IsLogicalOperatorKeyword(std::get<std::string>(new_token.value))) {
 				new_token.category = Category::LogicalOperator;
 			}
 			else {
@@ -99,7 +126,7 @@ std::vector<Token> LexicalAnalyzer::GenerateTokens(std::string_view input_string
 			new_token.category = Category::Comma;
 			++curr_char;
 		}
-		else if (InputParser::IsRelationalOrAssignmentOperator(*curr_char)) {
+		else if (Utilities::IsRelationalOrAssignmentOperator(*curr_char)) {
 			new_token.value = std::string{ *curr_char };
 			++curr_char;
 			// second operator, if any, can only be '='
@@ -118,18 +145,15 @@ std::vector<Token> LexicalAnalyzer::GenerateTokens(std::string_view input_string
 				new_token.category = Category::RelationalOperator;
 			}
 		}
-		else if (InputParser::IsArithmeticOperator(*curr_char)) {
+		else if (Utilities::IsArithmeticOperator(*curr_char)) {
 			new_token.category = Category::ArithmeticOperator;
 			new_token.value = std::string{ *curr_char };
 			++curr_char;
 		}
-		else if (InputParser::IsWhitespace(*curr_char)) {
-			if (!tokens.empty() && tokens.back().category != Category::Newline) {
-				++curr_char;
-				continue;	// skip insertion
-			}
-			new_token.category = Category::Indent;
+		else if (Utilities::IsWhitespace(*curr_char)) {
+			assert(!IsStartOfNewLine() && "discarding whitespaces occurs after indentation is assumed to be checked first");
 			++curr_char;
+			continue;	// skip insertion
 		}
 		else if (*curr_char == '\n') {
 			new_token.category = Category::Newline;
@@ -142,5 +166,12 @@ std::vector<Token> LexicalAnalyzer::GenerateTokens(std::string_view input_string
 		// insert token
 		tokens.push_back(new_token);
 	}
+	
+	//// append dedents
+	//// note: if EOF is implicitly treated as dedent(s), then no need for this.
+	//for (int i = indent_level; i > 0; --i) {
+	//	tokens.push_back(Token{ .category = Category::Dedent });
+	//}
+
 	return tokens;
 }
