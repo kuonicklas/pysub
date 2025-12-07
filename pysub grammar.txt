@@ -1,7 +1,7 @@
 -determining whether something is "incomplete," and deciding to include/not include the next newline is puzzling:
 	-we can throw a certain EOF error if a line is incomplete vs. if a  (multi-line) statement is incomplete.
 	-if the line is incomplete, we discard the newline. if the line is complete, but more expected, we keep the newline.
-
+-NOTE: i think comments are a problem. we can simply treat comments implicitly as an endline or eof, or remove comments beforehand??
 notes:
 	'-->' is a translation of a (left-recursive) rule into an equivalent non-left-recursive one.
 

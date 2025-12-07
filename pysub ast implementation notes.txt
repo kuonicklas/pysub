@@ -9,7 +9,44 @@ private:
 	Parse(tokens);	// CheckSyntax and BuildTree call this
 	bool is_allocating
 	AST syntax_tree{}
+	std::vector<Token> token_stream;
 	std::iterator curr_token;
+
+	BuildTree(){
+		syntax_tree = AST();
+	}
+	AST(){
+		if (!eof){
+			return AST{Statements()};
+		}
+		return AST{};	
+	}
+	Statements(){
+		std::vector<Statement> statements{};
+		statements.push_back(Statement());	// at least one
+		while (!eof){
+			statements.push_back(Statement());
+		}
+		return statements;
+	}
+	StatementType Statement(){
+		if (MatchCompoundStatement()){
+			return CompoundStatement();
+		}
+		else if (MatchSimpleStatement()){
+			return SimpleStatement();
+		}
+	}
+	SimpleStatement(){
+		if (match(NAME, '=')){
+			return Assignment();
+		}
+		return Expression();
+	}
+}
+
+class AST{
+	std::vector<Statement> statements{};
 }
 
 void CheckSyntax(tokens){
@@ -26,15 +63,21 @@ void Parse(tokens){
 	
 }
 
-class AST_TYPE{
-public:
-	Store(stuff)
+
+
+
+
+class Statement{
+	
 }
-
-// AST
-// well, it depends on what we got, right?
-class AST{
-
+class CompoundStatement : public Statement{
+	
+}
+class SimpleStatement : public Statement{
+	
+}
+class Assignment : public SimpleStatement{
+	
 }
 
 std::vector<Statement>
