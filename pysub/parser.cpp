@@ -1,5 +1,6 @@
 #include "parser.hpp"
 
+#include <iostream>
 #include <stdexcept>
 
 // return true and consume one token if curr token matches any of the inputs
@@ -86,15 +87,16 @@ std::unique_ptr<Statement> Parser::GetSimpleStatement() {
 }
 
 std::unique_ptr<Expression> Parser::GetExpression() {
-	auto right = GetConjunction();
+	std::unique_ptr<Expression> right = GetConjunction();
 	while (Match(Token{ .value = "or", .category = Category::LogicalOperator })) {
+		Token op = GetPreviousToken();
 		dynamic_cast<BinaryExpression*>(right.get()) = Token{ .value = "or", .category = Category::LogicalOperator };
 		right->right = GetExpression();
 	}
 	return right;
 }
 
-std::unique_ptr<Expression> GetConjunction() {
+std::unique_ptr<Expression> Parser::GetConjunction() {
 
 }
 
@@ -112,3 +114,15 @@ std::unique_ptr<Expression> GetConjunction() {
 //WhileStatement Parser::GetWhileStatement() {
 //	
 //}
+
+void BinaryExpression::Accept(const Visitor* visitor) const {
+	visitor->VisitBinaryExpression(this);
+}
+
+void Visitor::Visit(const Expression* expression) const {
+	expression->Accept(this);
+}
+
+void Visitor::VisitBinaryExpression(const BinaryExpression* binary_expression) const {
+	std::cout << "visited binary expression!" << std::endl;
+}

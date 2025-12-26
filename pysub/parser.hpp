@@ -47,9 +47,12 @@ struct Statement {
 };
 
 struct Expression : Statement {
+	virtual void Accept(const Visitor* visitor) const = 0;
 };
 
 struct BinaryExpression : Expression {
+	void Accept(const Visitor* visitor) const override;
+
 	std::unique_ptr<Expression> left;
 	Token op;
 	std::unique_ptr<Expression> right;
@@ -99,6 +102,13 @@ private:
 	bool Check(Category category) const;
 	bool Check(const Token& compare_token) const;
 	bool IsAtEnd() const;
+	Token GetPreviousToken() const;
+};
+
+class Visitor {
+public:
+	void Visit(const Expression* expression) const;
+	void VisitBinaryExpression(const BinaryExpression* binary_expression) const;
 };
 
 #endif
