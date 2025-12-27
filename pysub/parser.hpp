@@ -43,32 +43,45 @@
 	>;
 */
 
+class Visitor;
+
 struct Statement {
 };
 
 struct Expression : Statement {
 	virtual void Accept(const Visitor* visitor) const = 0;
+	virtual ~Expression() = default;
 };
 
 struct BinaryExpression : Expression {
-	void Accept(const Visitor* visitor) const override;
-
 	std::unique_ptr<Expression> left;
 	Token op;
 	std::unique_ptr<Expression> right;
+
+	explicit BinaryExpression(std::unique_ptr<Expression> l, Token op, std::unique_ptr<Expression> r) : left(std::move(l)), op(op), right(std::move(r)) {};
+	void Accept(const Visitor* visitor) const override;
 };
 
 struct UnaryExpression : Expression {
-	std::unique_ptr<Expression> right;
+	std::unique_ptr<Expression> expression;
 	Token op;
+
+	explicit UnaryExpression(std::unique_ptr<Expression> exp, Token op) : expression(std::move(exp)), op(op) {};
+	void Accept(const Visitor* visitor) const override;
 };
 
 struct Grouping : Expression {
 	std::unique_ptr<Expression> expression;
+
+	explicit Grouping(std::unique_ptr<Expression> exp) : expression(std::move(exp)) {};
+	void Accept(const Visitor* visitor) const override;
 };
 
 struct Atom : Expression {
 	Token value;
+
+	explicit Atom(const Token& token) : value(token) {};
+	void Accept(const Visitor* visitor) const override;
 };
 
 struct AST {
@@ -93,6 +106,15 @@ private:
 	//std::unique_ptr<CompoundStatement> GetCompoundStatement();
 	std::unique_ptr<Statement> GetSimpleStatement();
 	std::unique_ptr<Expression> GetExpression();
+	std::unique_ptr<Expression> GetConjunction();
+	std::unique_ptr<Expression> GetInversion();
+	std::unique_ptr<Expression> GetComparison();
+	std::unique_ptr<Expression> GetSum();
+	std::unique_ptr<Expression> GetTerm();
+	std::unique_ptr<Expression> GetFactor();
+	std::unique_ptr<Expression> GetPrimary();
+	std::unique_ptr<Expression> GetAtom();
+	std::unique_ptr<Expression> GetGrouping();
 	/*IfStatement GetIfStatement();
 	WhileStatement GetWhileStatement();*/
 
@@ -109,6 +131,9 @@ class Visitor {
 public:
 	void Visit(const Expression* expression) const;
 	void VisitBinaryExpression(const BinaryExpression* binary_expression) const;
+	void VisitUnaryExpression(const UnaryExpression* unary_expression) const;
+	void VisitAtom(const Atom* atom) const;
+	void VisitGrouping(const Grouping* grouping) const;
 };
 
 #endif

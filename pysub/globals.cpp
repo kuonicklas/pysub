@@ -2,7 +2,6 @@
 
 #include <iterator>
 #include <algorithm>
-#include <stdexcept>
 
 std::string Utilities::ToLowerCase(std::string_view original) {
 	std::string lowercase{};

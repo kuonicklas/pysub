@@ -88,7 +88,7 @@ term:
 	term '*' factor
 	term '/' factor 
 	factor
-	--> factor (('*'|'/') factor)*
+	--> factor (('*'|'/'|'%') factor)*
 
 factor:
 	'+' factor

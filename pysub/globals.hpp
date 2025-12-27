@@ -5,6 +5,7 @@
 #include <vector>
 #include <variant>
 #include <optional>
+#include <stdexcept>
 
 enum class Category
 {
@@ -58,6 +59,11 @@ namespace Utilities {
 
     // exceptions
     std::exception AddContext(const std::string& context, const std::exception& ex);
+};
+
+class UnexpectedEndOfFile : public std::runtime_error {
+public:
+    explicit UnexpectedEndOfFile(std::string_view msg = "unexpected end of file") : std::runtime_error(msg.data()) {};
 };
 
 #endif

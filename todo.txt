@@ -1,4 +1,5 @@
 TODO:
+-have a category enumeration for each individual operator (so you don't have to check both value and category)
 -better error reporting for lexer
 -remember to remove whitespaces for the output of getline
 -make sure we don't throw std::exception, but throw a derived object.
