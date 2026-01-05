@@ -7,6 +7,7 @@
 #include "../pysub/lexer.cpp"
 #include "../pysub/execution.cpp"
 #include "../pysub/globals.cpp"
+#include "../pysub/parser.cpp"
 #include <vcpkg_installed/x64-windows/x64-windows/include/magic_enum/magic_enum.hpp>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
@@ -20,7 +21,7 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 namespace Microsoft::VisualStudio::CppUnitTestFramework {
 	
 	// equality asserts require a template specialization for ToString<> for error message purposes.
-	// the process of conversion: using creating a wstringstream and using << operator.
+	// the process of conversion: creating a wstringstream and using << operator.
 	// to add a new type: (1) overload wstringstream << operator, (2) add template specialization.
 
 	std::string ErrorToString(DWORD error) {
@@ -58,24 +59,38 @@ namespace Microsoft::VisualStudio::CppUnitTestFramework {
 		return stream;
 	}
 
+	template <typename T>
+	std::wstringstream& operator<<(std::wstringstream& stream, const std::vector<T>& vector) {
+		for (auto iter = std::begin(vector); iter != std::end(vector); ++iter) {
+			stream << *iter;
+			if (iter != --std::end(vector)) {
+				stream << ',';
+			}
+		}
+		return stream;
+	}
+
 	std::wstringstream& operator<<(std::wstringstream& stream, const Token& token) {
 		// convert to wstring
 		stream << '{';
-		stream << ToWString(magic_enum::enum_name(token.category).data());
+		stream << std::string{magic_enum::enum_name(token.category)};
 		stream << ',';
 		std::visit([&](auto val) {stream << val; }, token.value);
 		stream << '}';
 		return stream;
 	}
 
-	template <typename T>
-	std::wstringstream& operator<<(std::wstringstream& stream, const std::vector<T>& token_line) {
-		for (auto iter = std::begin(token_line); iter != std::end(token_line); ++iter) {
-			stream << *iter;
-			if (iter != --std::end(token_line)) {
-				stream << ',';
-			}
+	std::wstringstream& operator<<(std::wstringstream& stream, const std::unique_ptr<Statement>& statement) {
+		// convert to wstring
+		Statement* g = statement.get();
+		if (dynamic_cast<Atom*>(g)) {
+
 		}
+		stream << '{';
+		stream << ToWString(magic_enum::enum_name(token.category).data());
+		stream << ',';
+		std::visit([&](auto val) {stream << val; }, token.value);
+		stream << '}';
 		return stream;
 	}
 
@@ -94,6 +109,14 @@ namespace Microsoft::VisualStudio::CppUnitTestFramework {
 
 	template<> inline std::wstring ToString<std::vector<Token>>(const std::vector<Token>& token) {
 		return ConstructWideString(token);
+	}
+
+	template<> inline std::wstring ToString<std::vector<std::unique_ptr<Statement>>>(const std::vector<std::unique_ptr<Statement>>& statements) {
+		return ConstructWideString(statements);
+	}
+
+	template<> inline std::wstring ToString<std::unique_ptr<Statement>>(const std::unique_ptr<Statement>& statement) {
+		return ConstructWideString(statement);
 	}
 }
 
@@ -273,6 +296,50 @@ namespace tests
 			FileExecution file("../../files_for_testing/read_file_test.py");
 			std::string actual = file.GetFileString();
 			Assert::AreEqual(expected, actual);
+		}
+	};
+	TEST_CLASS(ParserTest) {
+	public:
+		TEST_METHOD(EmptyValid) {
+			std::vector<Token> tokens{};
+			Parser p(tokens);
+			auto tree = p.BuildTree();
+			Assert::IsTrue(tree->statements.empty());
+		}
+		TEST_METHOD(NewlineValid) {
+			//newlines and comments
+			std::vector<Token> tokens{
+				Token{.category = Category::Newline},
+				Token{.category = Category::Comment}
+			};
+			Parser p(tokens);
+			auto tree = p.BuildTree();
+			Assert::IsTrue(tree->statements.empty());
+		}
+		TEST_METHOD(SingleAtomValid) {
+			Token numeric_atom = Token{ .value = 1, .category = Category::NumericLiteral };
+			std::vector<Token> tokens{
+				numeric_atom
+			};
+			Parser p(tokens);
+			auto tree = p.BuildTree();
+			Assert::AreEqual(tree->statements, { std::make_unique<Atom>(numeric_atom)});
+
+			Token identifier_atom = Token{ .value = "variable", .category = Category::Identifier};
+			std::vector<Token> identifier_atom_tokens{
+				identifier_atom
+			};
+			Parser parser_identifier(identifier_atom_tokens);
+			auto identifier_atom_tree = parser_identifier.BuildTree();
+			Assert::AreEqual(identifier_atom_tree->statements, { std::make_unique<Atom>(identifier_atom) });
+		}
+		TEST_METHOD(SingleAtomInvalid) {
+			Token invalid_atom = Token{ .value = "+", .category = Category::ArithmeticOperator};
+			std::vector<Token> tokens{
+				invalid_atom
+			};
+			Parser p(tokens);
+			//Assert::ExpectException<std::runtime_error>(p.BuildTree());
 		}
 	};
 }

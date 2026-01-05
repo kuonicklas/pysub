@@ -1,4 +1,17 @@
 TODO:
+test expression parsing:
+-redundant std::move in constructor?
+-right now, we parse one one-line expressions, one on each line. these are compiled into statements.
+
+error reporting
+-to report which line we're on, we may need a data structure that takes a token num and returns its line num and position within that line (maybe just a vector containing the line starts indices. we can perform a binary search to get the line and subtraction to get the distance from beginning of the line.
+-errors are reported immediately, followed by syncing.
+
+synchronization
+add assignment
+add if statement
+add while statement
+
 -have a category enumeration for each individual operator (so you don't have to check both value and category)
 -better error reporting for lexer
 -remember to remove whitespaces for the output of getline

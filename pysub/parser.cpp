@@ -13,7 +13,7 @@ bool Parser::Match(auto&&... input) {
 				match_found = Check(input) || match_found;
 			}
 		}(), ...
-	);
+			);
 	if (match_found) {
 		IncrementToken();
 	}
@@ -56,8 +56,19 @@ Token Parser::GetPreviousToken() const {
 	return *(curr_token - 1);
 }
 
+[[nodiscard]] std::unique_ptr<AST> Parser::BuildTree() {
+	return BuildAST();
+}
+
+void Parser::CheckSyntax() {
+
+}
+
 std::unique_ptr<AST> Parser::BuildAST() {
 	std::unique_ptr<AST> new_ast = std::make_unique<AST>();
+	
+	// skip empty lines
+	while (Match(Category::Newline, Category::Comment)) {}
 	if (!IsAtEnd()) {
 		new_ast->statements = GetStatements();
 	}
@@ -66,8 +77,12 @@ std::unique_ptr<AST> Parser::BuildAST() {
 
 std::vector<std::unique_ptr<Statement>> Parser::GetStatements() {
 	std::vector<std::unique_ptr<Statement>> statements{};
+	assert(!Match(Category::Newline, Category::Comment));
 	statements.push_back(GetStatement());
 	while (!IsAtEnd()) {
+		if (Match(Category::Newline, Category::Comment)) {
+			continue;
+		}
 		statements.push_back(GetStatement());
 	}
 	return statements;
@@ -77,7 +92,9 @@ std::unique_ptr<Statement> Parser::GetStatement() {
 	//if (Check("if") || Check("while")) {
 	//	return GetCompoundStatement();
 	//}
-	return GetSimpleStatement();
+	std::unique_ptr<Statement> simple = GetSimpleStatement();
+	Match(Category::Newline);	// optional
+	return simple;
 }
 
 //CompoundStatement Parser::GetCompoundStatement() {
@@ -178,20 +195,17 @@ std::unique_ptr<Expression> Parser::GetAtom() {
 
 std::unique_ptr<Expression> Parser::GetGrouping() {
 	// because this is the final rule in parsing an expression (before recursing back to the start), we perform additional checks
+	if (Match(Category::LeftParenthesis)) {
+		std::unique_ptr<Expression> expression = GetExpression();
+		if (!Match(Category::RightParenthesis)) {
+			throw std::runtime_error("expected right parenthesis after expression");
+		}
+		return std::make_unique<Grouping>(std::move(expression));
+	}
 	if (IsAtEnd()) {
 		throw UnexpectedEndOfFile();
 	}
-	if (!Match(Category::LeftParenthesis)) {
-		throw std::runtime_error("syntax error");
-	}
-	std::unique_ptr<Expression> expression = GetExpression();
-	if (IsAtEnd()) {
-		throw UnexpectedEndOfFile();
-	}
-	if (!Match(Category::RightParenthesis)) {
-		throw std::runtime_error("expected right parenthesis after expression");
-	}
-	return std::make_unique<Grouping>(std::move(expression));
+	throw std::runtime_error("expected expression");
 }
 
 

@@ -46,11 +46,11 @@
 class Visitor;
 
 struct Statement {
+	virtual void Accept(const Visitor* visitor) const = 0;
+	virtual ~Statement() = default;
 };
 
 struct Expression : Statement {
-	virtual void Accept(const Visitor* visitor) const = 0;
-	virtual ~Expression() = default;
 };
 
 struct BinaryExpression : Expression {
@@ -95,6 +95,8 @@ public:
 	explicit Parser(const std::vector<Token>& _tokens) : tokens(_tokens){
 		curr_token = std::cbegin(tokens);
 	}
+	[[nodiscard]] std::unique_ptr<AST> BuildTree();
+	void CheckSyntax();
 
 private:
 	const std::vector<Token>& tokens;
