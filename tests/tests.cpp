@@ -81,16 +81,64 @@ namespace Microsoft::VisualStudio::CppUnitTestFramework {
 	}
 
 	std::wstringstream& operator<<(std::wstringstream& stream, const std::unique_ptr<Statement>& statement) {
-		// convert to wstring
-		Statement* g = statement.get();
-		if (dynamic_cast<Atom*>(g)) {
-
+		Statement* statement_ptr = statement.get();
+		// atom
+		Atom* atom_ptr = dynamic_cast<Atom*>(statement_ptr);
+		if (atom_ptr) {
+			stream << atom_ptr;
+			return stream;
 		}
-		stream << '{';
-		stream << ToWString(magic_enum::enum_name(token.category).data());
+		Grouping* grouping_ptr = dynamic_cast<Grouping*>(statement_ptr);
+		if (grouping_ptr) {
+			stream << grouping_ptr;
+			return stream;
+		}
+		Expression* expression_ptr = dynamic_cast<Expression*>(statement_ptr);
+		if (expression_ptr) {
+			// the subclasses of Expression are handled elsewhere
+			stream << expression_ptr;
+			return stream;
+		}
+		throw std::invalid_argument("Statement cannot be printed!");
+	}
+
+	std::wstringstream& operator<<(std::wstringstream& stream, Atom* atom) {
+		stream << atom->value;
+		return stream;
+	}
+
+	std::wstringstream& operator<<(std::wstringstream& stream, Grouping* grouping) {
+		stream << grouping->expression;
+		return stream;
+	}
+
+	std::wstringstream& operator<<(std::wstringstream& stream, Expression* expression) {
+		UnaryExpression* unary_ptr = dynamic_cast<UnaryExpression*>(expression);
+		if (unary_ptr) {
+			stream << unary_ptr;
+			return stream;
+		}
+		BinaryExpression* binary_ptr = dynamic_cast<BinaryExpression*>(expression);
+		if (binary_ptr) {
+			stream << binary_ptr;
+		}
+		return stream;
+	}
+
+	std::wstringstream& operator<<(std::wstringstream& stream, UnaryExpression* unary) {
+		stream << unary->expression;
 		stream << ',';
-		std::visit([&](auto val) {stream << val; }, token.value);
-		stream << '}';
+		stream << unary->op;
+		return stream;
+	}
+
+	std::wstringstream& operator<<(std::wstringstream& stream, BinaryExpression* binary) {
+		stream << "left";
+		stream << binary->left;
+		stream << ',';
+		stream << binary->op;
+		stream << ',';
+		stream << binary->right;
 		return stream;
 	}
 
