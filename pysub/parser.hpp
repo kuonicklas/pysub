@@ -46,11 +46,15 @@
 class Visitor;
 
 struct Statement {
-	virtual void Accept(const Visitor* visitor) const = 0;
 	virtual ~Statement() = default;
+	virtual void Accept(const Visitor* visitor) const = 0;
+	virtual bool operator==(const Statement* other) const = 0;
+	bool operator==(const Statement& other) const = default;
 };
 
 struct Expression : Statement {
+	bool operator==(const Statement* other) const override;
+	bool operator==(const Expression& other) const = default;
 };
 
 struct BinaryExpression : Expression {
@@ -58,23 +62,27 @@ struct BinaryExpression : Expression {
 	Token op;
 	std::unique_ptr<Expression> right;
 
-	explicit BinaryExpression(std::unique_ptr<Expression> l, Token op, std::unique_ptr<Expression> r) : left(std::move(l)), op(op), right(std::move(r)) {};
+	explicit BinaryExpression(std::unique_ptr<Expression>&& l, Token op, std::unique_ptr<Expression>&& r) : left(std::move(l)), op(op), right(std::move(r)) {};
 	void Accept(const Visitor* visitor) const override;
+	bool operator==(const Statement* other) const override;
+	bool operator==(const BinaryExpression& other) const = default;
 };
 
 struct UnaryExpression : Expression {
 	std::unique_ptr<Expression> expression;
 	Token op;
 
-	explicit UnaryExpression(std::unique_ptr<Expression> exp, Token op) : expression(std::move(exp)), op(op) {};
+	explicit UnaryExpression(std::unique_ptr<Expression>&& exp, Token op) : expression(std::move(exp)), op(op) {};
 	void Accept(const Visitor* visitor) const override;
+	bool operator==(const Statement* other) const override;
 };
 
 struct Grouping : Expression {
 	std::unique_ptr<Expression> expression;
 
-	explicit Grouping(std::unique_ptr<Expression> exp) : expression(std::move(exp)) {};
+	explicit Grouping(std::unique_ptr<Expression>&& exp) : expression(std::move(exp)) {};
 	void Accept(const Visitor* visitor) const override;
+	bool operator==(const Statement* other) const override;
 };
 
 struct Atom : Expression {
@@ -82,6 +90,7 @@ struct Atom : Expression {
 
 	explicit Atom(const Token& token) : value(token) {};
 	void Accept(const Visitor* visitor) const override;
+	bool operator==(const Statement* other) const override;
 };
 
 struct AST {

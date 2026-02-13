@@ -224,9 +224,33 @@ std::unique_ptr<Expression> Parser::GetGrouping() {
 //	
 //}
 
+/* Expression */
+bool Expression::operator==(const Expression& expression) const {
+
+}
+
+/* BinaryExpression */
+
 void BinaryExpression::Accept(const Visitor* visitor) const {
 	visitor->VisitBinaryExpression(this);
 }
+
+bool BinaryExpression::operator==(const Statement* other) const {
+	if (typeid(*this) != typeid(*other)) {
+		return false;
+	}
+	const BinaryExpression* casted_other = dynamic_cast<const BinaryExpression*>(other);
+	return *this == *casted_other;
+	return *left == *casted_other->left &&
+		right == casted_other->right &&
+		op == casted_other->op;
+}
+
+//bool BinaryExpression::operator==(const BinaryExpression& other) const {
+//
+//}
+
+/* UnaryExpression */
 
 void UnaryExpression::Accept(const Visitor* visitor) const {
 	visitor->VisitUnaryExpression(this);

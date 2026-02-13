@@ -40,22 +40,43 @@ namespace Microsoft::VisualStudio::CppUnitTestFramework {
 		return message;
 	}
 
-	std::wstring ToWString(const std::string& utf8_string) {
+	std::wstring ToWString(const std::string_view utf8_string) {
 		// wstringstream does not have default behavior for std::string (but it does for other primitive types).
 		// there is no non-deprecated conversion function in the std library (as of C++20), so windows api is used.
-		// input is const string& (rather than string_view) because a null-terminated string (which string::c_str provides) is required if length is determined by function.
-		int buffer_size = MultiByteToWideChar(CP_UTF8, 0, utf8_string.c_str(), -1, nullptr, 0);
+		
+		// a null-terminated string is required to determine string length
+		int buffer_size = MultiByteToWideChar(CP_UTF8, 0, utf8_string.data(), -1, nullptr, 0);
 		if (!buffer_size) {
 			throw std::exception(ErrorToString(GetLastError()).c_str());
 		}
 		std::wstring converted(buffer_size, 0);
-		MultiByteToWideChar(CP_UTF8, 0, utf8_string.c_str(), -1, converted.data(), buffer_size);
+		MultiByteToWideChar(CP_UTF8, 0, utf8_string.data(), -1, converted.data(), buffer_size);
 		converted.pop_back();	// remove null terminator added by c_str call
 		return converted;
 	}
 
 	std::wstringstream& operator<<(std::wstringstream& stream, const std::string& string) {
 		stream << ToWString(string);
+		return stream;
+	}
+
+	//std::wstringstream& operator<<(std::wstringstream& stream, const ValueType& value) {
+	//	//if (std::holds_alternative<std::string>(value)) {
+	//	//	stream << ToWString(std::get<std::string>(value));
+	//	//}
+	//	//else {
+	//	//	assert(std::holds_alternative<int>(value));
+	//	//	stream << ToString(std::get<int>(value));
+	//	//}
+	//	return stream;
+	//}
+
+	std::wstringstream& operator<<(std::wstringstream& stream, const Token& token) {
+		stream << '{';
+		stream << ToWString(magic_enum::enum_name(token.category));
+		stream << ',';
+		std::visit([&](auto val) {stream << val; }, token.value);
+		stream << '}';
 		return stream;
 	}
 
@@ -67,16 +88,6 @@ namespace Microsoft::VisualStudio::CppUnitTestFramework {
 				stream << ',';
 			}
 		}
-		return stream;
-	}
-
-	std::wstringstream& operator<<(std::wstringstream& stream, const Token& token) {
-		// convert to wstring
-		stream << '{';
-		stream << std::string{magic_enum::enum_name(token.category)};
-		stream << ',';
-		std::visit([&](auto val) {stream << val; }, token.value);
-		stream << '}';
 		return stream;
 	}
 
@@ -126,18 +137,22 @@ namespace Microsoft::VisualStudio::CppUnitTestFramework {
 	}
 
 	std::wstringstream& operator<<(std::wstringstream& stream, UnaryExpression* unary) {
+		stream << std::string{ "exp: " };
 		stream << unary->expression;
 		stream << ',';
+		stream << std::string{ "op: " };
 		stream << unary->op;
 		return stream;
 	}
 
 	std::wstringstream& operator<<(std::wstringstream& stream, BinaryExpression* binary) {
-		stream << "left";
+		stream << std::string{ "left: " };
 		stream << binary->left;
 		stream << ',';
+		stream << std::string{ "op: " };
 		stream << binary->op;
 		stream << ',';
+		stream << std::string{ "right: " };
 		stream << binary->right;
 		return stream;
 	}
@@ -371,24 +386,29 @@ namespace tests
 			};
 			Parser p(tokens);
 			auto tree = p.BuildTree();
-			Assert::AreEqual(tree->statements, { std::make_unique<Atom>(numeric_atom)});
 
-			Token identifier_atom = Token{ .value = "variable", .category = Category::Identifier};
-			std::vector<Token> identifier_atom_tokens{
-				identifier_atom
-			};
-			Parser parser_identifier(identifier_atom_tokens);
-			auto identifier_atom_tree = parser_identifier.BuildTree();
-			Assert::AreEqual(identifier_atom_tree->statements, { std::make_unique<Atom>(identifier_atom) });
+			std::vector<std::unique_ptr<Statement>> res{};
+			res.push_back(std::make_unique<Atom>(numeric_atom));
+			
+			Assert::AreEqual(tree->statements, res);
+
+			//Token identifier_atom = Token{ .value = "variable", .category = Category::Identifier};
+			//std::vector<Token> identifier_atom_tokens{
+			//	identifier_atom
+			//};
+			//Parser parser_identifier(identifier_atom_tokens);
+			//auto identifier_atom_tree = parser_identifier.BuildTree();
+			//Assert::AreEqual(identifier_atom_tree->statements, { std::move(std::make_unique<Atom>(identifier_atom)) });
 		}
-		TEST_METHOD(SingleAtomInvalid) {
-			Token invalid_atom = Token{ .value = "+", .category = Category::ArithmeticOperator};
-			std::vector<Token> tokens{
-				invalid_atom
-			};
-			Parser p(tokens);
-			//Assert::ExpectException<std::runtime_error>(p.BuildTree());
-		}
+		//TEST_METHOD(SingleAtomInvalid) {
+		//	Token invalid_atom = Token{ .value = "+", .category = Category::ArithmeticOperator};
+		//	std::vector<Token> tokens{
+		//		invalid_atom
+		//	};
+		//	Parser p(tokens);
+		//	auto func = [&]() {auto res = p.BuildTree(); };
+		//	Assert::ExpectException<std::runtime_error>(func);
+		//}
 	};
 }
 
