@@ -224,48 +224,123 @@ std::unique_ptr<Expression> Parser::GetGrouping() {
 //	
 //}
 
-/* Expression */
-bool Expression::operator==(const Expression& expression) const {
+/* Statement */
 
+bool Statement::operator==(const Statement& other) const {
+	if (typeid(other) != typeid(*this)) {
+		return false;
+	}
+	return BaseCaseEquals(other);
+}
+
+bool Statement::BaseCaseEquals(const Statement& other) const {
+	// "base case" for derived class calls to operator== (to prevent infinite recursion)
+	other;
+	return true;
+}
+
+/* Expression */
+
+bool Expression::operator==(const Statement& other) const {
+	if (typeid(other) != typeid(*this)) {
+		return false;
+	}
+	const Expression* other_casted = dynamic_cast<const Expression*>(&other);
+	return *this == *other_casted;
+}
+
+bool Expression::operator==(const Expression& other) const {
+	return Statement::BaseCaseEquals(other);
 }
 
 /* BinaryExpression */
 
-void BinaryExpression::Accept(const Visitor* visitor) const {
-	visitor->VisitBinaryExpression(this);
+void BinaryExpression::Accept(const Visitor& visitor) const {
+	visitor.VisitBinaryExpression(this);
 }
 
-bool BinaryExpression::operator==(const Statement* other) const {
-	if (typeid(*this) != typeid(*other)) {
+bool BinaryExpression::operator==(const Statement& other) const {
+	if (typeid(other) != typeid(*this)) {
 		return false;
 	}
-	const BinaryExpression* casted_other = dynamic_cast<const BinaryExpression*>(other);
-	return *this == *casted_other;
-	return *left == *casted_other->left &&
-		right == casted_other->right &&
-		op == casted_other->op;
+	const BinaryExpression* other_casted = dynamic_cast<const BinaryExpression*>(&other);
+	return *this == *other_casted;
 }
 
-//bool BinaryExpression::operator==(const BinaryExpression& other) const {
-//
-//}
+bool BinaryExpression::operator==(const BinaryExpression& other) const {
+	assert(other.left);
+	assert(other.right);
+	const Statement* left_virtual_downcast = dynamic_cast<const Statement*>(left.get());
+	const Statement* right_virtual_downcast = dynamic_cast<const Statement*>(right.get());
+	return *left_virtual_downcast == *other.left
+		&& op == other.op
+		&& *right_virtual_downcast == *other.right
+		&& Expression::operator==(other);
+}
 
 /* UnaryExpression */
 
-void UnaryExpression::Accept(const Visitor* visitor) const {
-	visitor->VisitUnaryExpression(this);
+void UnaryExpression::Accept(const Visitor& visitor) const {
+	visitor.VisitUnaryExpression(this);
 }
 
-void Grouping::Accept(const Visitor* visitor) const {
-	visitor->VisitGrouping(this);
+bool UnaryExpression::operator==(const Statement& other) const {
+	if (typeid(other) != typeid(*this)) {
+		return false;
+	}
+	const UnaryExpression* other_casted = dynamic_cast<const UnaryExpression*>(&other);
+	return *this == *other_casted;
+}
+bool UnaryExpression::operator==(const UnaryExpression& other) const {
+	assert(other.expression);
+	const Statement* exp_virtual_downcast = dynamic_cast<const Statement*>(expression.get());
+	return *exp_virtual_downcast == *other.expression
+		&& op == other.op
+		&& Expression::operator==(other);
 }
 
-void Atom::Accept(const Visitor* visitor) const {
-	visitor->VisitAtom(this);
+/* Grouping */
+
+void Grouping::Accept(const Visitor& visitor) const {
+	visitor.VisitGrouping(this);
 }
+
+bool Grouping::operator==(const Statement& other) const {
+	if (typeid(other) != typeid(*this)) {
+		return false;
+	}
+	const Grouping* other_casted = dynamic_cast<const Grouping*>(&other);
+	return *this == *other_casted;
+}
+bool Grouping::operator==(const Grouping& other) const {
+	assert(other.expression);
+	const Statement* exp_virtual_downcast = dynamic_cast<const Statement*>(expression.get());
+	return *exp_virtual_downcast == *other.expression
+		&& Expression::operator==(other);
+}
+
+/* Atom */
+
+void Atom::Accept(const Visitor& visitor) const {
+	visitor.VisitAtom(this);
+}
+
+bool Atom::operator==(const Statement& other) const {
+	if (typeid(other) != typeid(*this)) {
+		return false;
+	}
+	const Atom* other_casted = dynamic_cast<const Atom*>(&other);
+	return *this == *other_casted;
+}
+bool Atom::operator==(const Atom& other) const {
+	return value == other.value
+		&& Expression::operator==(other);
+}
+
+/* Visitor */
 
 void Visitor::Visit(const Expression* expression) const {
-	expression->Accept(this);
+	expression->Accept(*this);
 }
 
 void Visitor::VisitBinaryExpression(const BinaryExpression* binary_expression) const {

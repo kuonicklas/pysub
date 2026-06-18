@@ -91,20 +91,18 @@ namespace Microsoft::VisualStudio::CppUnitTestFramework {
 		return stream;
 	}
 
-	std::wstringstream& operator<<(std::wstringstream& stream, const std::unique_ptr<Statement>& statement) {
-		Statement* statement_ptr = statement.get();
-		// atom
-		Atom* atom_ptr = dynamic_cast<Atom*>(statement_ptr);
+	std::wstringstream& operator<<(std::wstringstream& stream, const Statement* statement) {
+		const Atom* atom_ptr = dynamic_cast<const Atom*>(statement);
 		if (atom_ptr) {
 			stream << atom_ptr;
 			return stream;
 		}
-		Grouping* grouping_ptr = dynamic_cast<Grouping*>(statement_ptr);
+		const Grouping* grouping_ptr = dynamic_cast<const Grouping*>(statement);
 		if (grouping_ptr) {
 			stream << grouping_ptr;
 			return stream;
 		}
-		Expression* expression_ptr = dynamic_cast<Expression*>(statement_ptr);
+		const Expression* expression_ptr = dynamic_cast<const Expression*>(statement);
 		if (expression_ptr) {
 			// the subclasses of Expression are handled elsewhere
 			stream << expression_ptr;
@@ -179,7 +177,7 @@ namespace Microsoft::VisualStudio::CppUnitTestFramework {
 	}
 
 	template<> inline std::wstring ToString<std::unique_ptr<Statement>>(const std::unique_ptr<Statement>& statement) {
-		return ConstructWideString(statement);
+		return ConstructWideString(statement.get());
 	}
 }
 
@@ -362,6 +360,17 @@ namespace tests
 		}
 	};
 	TEST_CLASS(ParserTest) {
+	private:
+		void CompareVectorsOfStatements(const std::vector<std::unique_ptr<Statement>>& l, const std::vector<std::unique_ptr<Statement>>& r) {
+			Assert::IsTrue(l.size() == r.size());
+			auto l_iter = std::cbegin(l);
+			auto r_iter = std::cbegin(r);
+			while (l_iter != std::end(l)) {
+				Assert::IsTrue(**l_iter == **r_iter);
+				++l_iter;
+				++r_iter;
+			}
+		}
 	public:
 		TEST_METHOD(EmptyValid) {
 			std::vector<Token> tokens{};
@@ -390,7 +399,7 @@ namespace tests
 			std::vector<std::unique_ptr<Statement>> res{};
 			res.push_back(std::make_unique<Atom>(numeric_atom));
 			
-			Assert::AreEqual(tree->statements, res);
+			CompareVectorsOfStatements(tree->statements, res);
 
 			//Token identifier_atom = Token{ .value = "variable", .category = Category::Identifier};
 			//std::vector<Token> identifier_atom_tokens{
@@ -409,6 +418,53 @@ namespace tests
 		//	auto func = [&]() {auto res = p.BuildTree(); };
 		//	Assert::ExpectException<std::runtime_error>(func);
 		//}
+	};
+
+	TEST_CLASS(ParserTypesTest) {
+	public:
+		TEST_METHOD(AtomEqualityValue) {
+			Atom atom_1({ 1, Category::NumericLiteral });
+			Atom atom_1_duplicate = atom_1;
+			Atom atom_2({ 2, Category::NumericLiteral });
+			Atom atom_1_wrong_category({ 1, Category::Comma});
+
+			Assert::IsTrue(atom_1 == atom_1_duplicate);
+			Assert::IsFalse(atom_1 == atom_1_wrong_category);
+			Assert::IsFalse(atom_1 == atom_2);
+		}
+		TEST_METHOD(AtomEqualityVirtual) {
+			Atom atom_1(Token{ 1, Category::NumericLiteral });
+			Atom atom_2(Token{ 2, Category::NumericLiteral });
+			std::unique_ptr<Statement> ptr_atom_1(std::make_unique<Atom>(atom_1));
+			std::unique_ptr<Statement> ptr_atom_1_duplicate(std::make_unique<Atom>(atom_1));
+			std::unique_ptr<Statement> ptr_atom_2(std::make_unique<Atom>(atom_2));
+			std::unique_ptr<Statement> ptr_grouping_of_atom_1(std::make_unique<Grouping>(std::make_unique<Atom>(atom_1)));
+
+			Assert::IsTrue(*ptr_atom_1 == *ptr_atom_1);
+			Assert::IsTrue(*ptr_atom_1 == *ptr_atom_1_duplicate);
+			Assert::IsFalse(*ptr_atom_1 == *ptr_atom_2);
+			Assert::IsFalse(*ptr_atom_1 == *ptr_grouping_of_atom_1);
+		}
+		TEST_METHOD(BinaryTest) {
+			/*Atom atom_1({ 1, Category::NumericLiteral });
+			Atom atom_2({ 2, Category::NumericLiteral });
+			std::unique_ptr<Expression> exp_atom_1(std::move(&atom_1));
+			std::unique_ptr<Expression> exp_atom_2(std::move(&atom_2));
+			BinaryExpression binary_exp(std::move(exp_atom_1), Token{"+", Category::ArithmeticOperator}, std::move(exp_atom_2));*/
+
+			//Assert::IsTrue(binary_exp )
+			// unary
+
+			//atom 
+			//grouping
+		}
+		TEST_METHOD(UnaryTest) {
+
+		}
+		
+		TEST_METHOD(GroupingTest) {
+
+		}
 	};
 }
 
